@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Supabase Edge Function(Deno 런타임) — Next.js 빌드·린트 대상 아님
+    "supabase/functions/**",
   ]),
 ]);
 

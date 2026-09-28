@@ -1,17 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, PenLine, X } from "lucide-react";
+import { LogOut, Menu, PenLine, ShieldCheck, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { NAV_SECTIONS, WRITE_ACTIONS } from "@/lib/nav";
 import { SearchForm } from "../SearchForm";
+import { useCurrentUser } from "../auth/useCurrentUser";
 
 /** 모바일·태블릿 햄버거 메뉴 — 대분류 + 소분류 전체 */
 export function MobileMenu() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const user = useCurrentUser();
 
   // 페이지 이동 시 닫기 (렌더 중 상태 조정 — effect 없이 이전 경로와 비교)
   const [lastPath, setLastPath] = useState(pathname);
@@ -71,20 +73,48 @@ export function MobileMenu() {
 
               <div className="flex-1 overflow-y-auto px-4 pb-8 pt-4">
                 <SearchForm />
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <Link
-                    href="/login"
-                    className="inline-flex h-11 items-center justify-center rounded-full border border-line-2 bg-card text-sm font-semibold"
-                  >
-                    로그인
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="inline-flex h-11 items-center justify-center rounded-full bg-ink text-sm font-semibold text-paper"
-                  >
-                    회원가입
-                  </Link>
-                </div>
+                {user ? (
+                  <div className="mt-4 rounded-2xl border border-line bg-card p-3">
+                    <p className="truncate px-1 text-sm font-bold text-ink">{user.nickname} 님</p>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      {user.role === "admin" ? (
+                        <Link
+                          href="/admin"
+                          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-ink text-sm font-semibold text-paper"
+                        >
+                          <ShieldCheck aria-hidden className="size-4" />
+                          관리자
+                        </Link>
+                      ) : (
+                        <span />
+                      )}
+                      <form action="/auth/signout" method="post">
+                        <button
+                          type="submit"
+                          className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-full border border-line-2 bg-card text-sm font-semibold"
+                        >
+                          <LogOut aria-hidden className="size-4" />
+                          로그아웃
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <Link
+                      href="/login"
+                      className="inline-flex h-11 items-center justify-center rounded-full border border-line-2 bg-card text-sm font-semibold"
+                    >
+                      로그인
+                    </Link>
+                    <Link
+                      href="/signup"
+                      className="inline-flex h-11 items-center justify-center rounded-full bg-ink text-sm font-semibold text-paper"
+                    >
+                      회원가입
+                    </Link>
+                  </div>
+                )}
 
                 <ul className="mt-6 space-y-5">
                   {NAV_SECTIONS.map((s) => (
@@ -112,6 +142,7 @@ export function MobileMenu() {
                   <p className="flex items-center gap-1.5 px-1 text-sm font-bold">
                     <PenLine aria-hidden className="size-4 text-coral" />
                     글쓰기
+                    <span className="ml-auto rounded-full bg-stone px-2 py-0.5 text-[11px] font-bold text-ink-3">준비 중</span>
                   </p>
                   <ul className="mt-2 grid grid-cols-2 gap-1.5">
                     {WRITE_ACTIONS.map((a) => (

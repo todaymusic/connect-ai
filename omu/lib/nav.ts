@@ -51,10 +51,11 @@ export const NAV_SECTIONS: NavSection[] = [
   },
 ];
 
-/** 글쓰기 CTA 드롭다운 항목 */
+/** 글쓰기 CTA 드롭다운 항목 — 글쓰기 기능은 아직 준비 중이라 모두 /write 안내 페이지로 연결 */
 export const WRITE_ACTIONS = [
-  { href: "/community/new", label: "커뮤니티 글쓰기", hint: "자유·익명·Q&A·연주 자랑" },
-  { href: "/gear/market/new", label: "중고 판매글", hint: "판매·구매·나눔" },
-  { href: "/recruit/new", label: "모집글", hint: "밴드·세션·레슨·오디션" },
-  { href: "/score/requests/new", label: "악보 요청", hint: "이 곡 악보 있나요?" },
+  { key: "community", href: "/write?type=community", label: "커뮤니티 글쓰기", hint: "자유·익명·Q&A·연주 자랑" },
+  { key: "market", href: "/write?type=market", label: "중고 판매글", hint: "판매·구매·나눔" },
+  { key: "recruit", href: "/write?type=recruit", label: "모집글", hint: "밴드·세션·레슨·오디션" },
+  { key: "score-request", href: "/write?type=score-request", label: "악보 요청", hint: "이 곡 악보 있나요?" },
 ] as const;
+export type WriteActionKey = (typeof WRITE_ACTIONS)[number]["key"];

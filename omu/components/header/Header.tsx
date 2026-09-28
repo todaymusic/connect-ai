@@ -4,6 +4,7 @@ import { Logo } from "../Logo";
 import { SearchForm } from "../SearchForm";
 import { MainNav, MainNavStrip } from "./MainNav";
 import { MobileMenu } from "./MobileMenu";
+import { UserMenu } from "./UserMenu";
 import { WriteMenu } from "./WriteMenu";
 
 /** 글로벌 헤더 — 스크롤 시 상단 고정(sticky) */
@@ -27,12 +28,7 @@ export function Header() {
             <Search aria-hidden className="size-5" />
           </Link>
           <WriteMenu />
-          <Link
-            href="/login"
-            className="inline-flex h-9 items-center rounded-full border border-line-2 bg-card px-3.5 text-sm font-semibold text-ink transition-colors hover:border-ink-3 sm:h-10 sm:px-4"
-          >
-            로그인
-          </Link>
+          <UserMenu />
           <MobileMenu />
         </div>
       </div>
