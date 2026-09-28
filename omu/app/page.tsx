@@ -1,69 +1,102 @@
-import Image from "next/image";
+import { CategoryShortcuts } from "@/components/home/CategoryShortcuts";
+import { CommunityBoards } from "@/components/home/CommunityBoards";
+import { FreeScoreTabs } from "@/components/home/FreeScores";
+import { Hero } from "@/components/home/Hero";
+import { HowOmuWorks } from "@/components/home/HowOmuWorks";
+import { JoinBanner } from "@/components/home/JoinBanner";
+import { LatestInfo } from "@/components/home/LatestInfo";
+import { MarketPreview } from "@/components/home/MarketPreview";
+import { NewsStrip } from "@/components/home/NewsStrip";
+import { RecruitLegend, RecruitList } from "@/components/home/RecruitList";
+import { Section, SectionHeader } from "@/components/ui";
+import { MOCK_ARTICLES, MOCK_MARKET, MOCK_POPULAR, MOCK_QNA, MOCK_RECRUITS, MOCK_SCORES } from "@/lib/mock";
+import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/site";
+import type { Metadata } from "next";
 
-export default function Home() {
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
+
+// 홈 섹션 순서는 작업지시서 9-2 (검색 → 배너 → 무료 악보 → 정보 → 중고 → 커뮤니티 → 구인)
+export default function HomePage() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_NAME,
+    url: siteUrl(),
+    description: SITE_DESCRIPTION,
+    inLanguage: "ko-KR",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${siteUrl()}/search?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <Hero />
+      <NewsStrip />
+
+      <div className="mt-14 space-y-16 sm:mt-16 sm:space-y-20">
+        <CategoryShortcuts />
+
+        <Section labelledBy="free-scores-title">
+          <SectionHeader
+            id="free-scores-title"
+            eyebrow="Free Scores"
+            title="이번 주 무료 악보"
+            description="가입 없이 바로 받는 PDF 악보. 과목별로 골라보세요."
+            href="/score"
+          />
+          <FreeScoreTabs scores={MOCK_SCORES} />
+        </Section>
+
+        <Section labelledBy="info-title">
+          <SectionHeader
+            id="info-title"
+            eyebrow="Music Info"
+            title="음악정보 최신 글"
+            description="악기 입문부터 입시, 공모전, 연습실 정보까지."
+            href="/info"
+          />
+          <LatestInfo articles={MOCK_ARTICLES} />
+        </Section>
+
+        <Section labelledBy="market-title">
+          <SectionHeader
+            id="market-title"
+            eyebrow="Used Market"
+            title="중고 장터 최신 매물"
+            description="직거래 중심의 악기·장비 중고 거래. 나눔도 있어요."
+            href="/gear/market"
+          />
+          <MarketPreview items={MOCK_MARKET} />
+        </Section>
+
+        <Section labelledBy="community-title">
+          <SectionHeader id="community-title" eyebrow="Community" title="지금 커뮤니티에서는" href="/community" />
+          <CommunityBoards questions={MOCK_QNA} popular={MOCK_POPULAR} />
+        </Section>
+
+        <Section labelledBy="recruit-title">
+          <SectionHeader
+            id="recruit-title"
+            eyebrow="Band & Team"
+            title="밴드·팀원 모집"
+            description="취미부터 현역까지, 성격 배지로 나에게 맞는 팀을 찾아보세요."
+            href="/recruit/band"
+          />
+          <div className="mb-4">
+            <RecruitLegend />
+          </div>
+          <RecruitList recruits={MOCK_RECRUITS} />
+        </Section>
+
+        <HowOmuWorks />
+        <JoinBanner />
+      </div>
+    </>
   );
 }
