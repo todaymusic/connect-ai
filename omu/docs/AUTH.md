@@ -1,4 +1,4 @@
-# OMU 로그인 설계 (Supabase Auth + 카카오 · 네이버)
+# OMU 로그인 설계 (Supabase Auth + 카카오 · 네이버 · 이메일 링크)
 
 ## 1. 한눈에 보기
 
@@ -42,7 +42,7 @@ https://<project-ref>.supabase.co/auth/v1/callback        ← ① Provider 콘�
 | `lib/auth-providers.ts` | 카카오·네이버 버튼 설정, `safeNextPath()` |
 | `app/auth/callback/route.ts` | OAuth 코드를 세션으로 교환 |
 | `app/auth/signout/route.ts` | 로그아웃 (POST 전용) |
-| `components/auth/*` | 로그인 화면, 소셜 버튼, 헤더용 `useCurrentUser` |
+| `components/auth/*` | 로그인 화면, 소셜 버튼, 이메일 로그인 폼(`EmailLoginForm`), 헤더용 `useCurrentUser` |
 
 **보안 메모**
 
@@ -86,6 +86,38 @@ https://<project-ref>.supabase.co/auth/v1/callback        ← ① Provider 콘�
 update public.profiles set role = 'admin'
 where id = (select id from auth.users where email = '<카카오 계정 이메일>');
 ```
+
+### 3-4. 이메일 로그인 링크 (카카오 키 없이 관리자 로그인)
+
+카카오 앱 키가 준비되기 전에도 관리자가 `/admin`에 들어갈 수 있도록 **비밀번호 없는 이메일 로그인 링크**를 둔다.
+
+- 화면: `/login`·`/signup`의 소셜 버튼 아래 "이메일로 로그인" 폼 (`components/auth/EmailLoginForm.tsx`)
+- 코드: `supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: <사이트>/auth/callback?next=… } })`
+- 흐름: 메일의 링크 → Supabase `/auth/v1/verify` → `<사이트>/auth/callback?code=…` → `exchangeCodeForSession` → `next`
+  - 카카오와 같은 PKCE 흐름이라 **요청한 브라우저에서 링크를 열어야** 한다(다른 브라우저면 "요청한 브라우저에서 열어 주세요" 안내).
+  - 만료·재사용된 링크는 "링크가 만료됐어요" 안내 후 다시 받게 한다.
+- 켜고 끄기: `NEXT_PUBLIC_AUTH_EMAIL_ENABLED` (기본 켜짐, `false`면 숨김). Supabase 환경변수가 없는 데모 모드에서는 항상 숨긴다.
+- 6자리 코드 입력 방식은 쓰지 않는다. Supabase 기본 메일 템플릿에는 코드(`{{ .Token }}`)가 없어서, 템플릿을 고치지 않으면 동작하지 않기 때문이다. 링크 방식은 기본 템플릿 그대로 동작한다.
+
+**Supabase 설정 (대시보드)**
+
+1. Authentication → Sign In / Providers → **Email**이 켜져 있는지 확인한다(기본 켜짐). **Confirm email**도 켠 상태로 둔다.
+2. Authentication → URL Configuration → **Redirect URLs**에 사이트 주소(`https://<사이트>/**`, `http://localhost:3000/**`)가 있어야 한다(카카오와 같은 설정).
+   - 빠져 있으면 Supabase가 Site URL(`/`)로 보내는데, 이때도 `proxy.ts`가 `/auth/callback`으로 넘겨 로그인을 마무리한다.
+3. **메일 발송 한도:** Supabase 기본 메일 서버는 **프로젝트 팀원(Organization 멤버) 주소로만**, 시간당 몇 통만 보낸다.
+   - 관리자 본인 로그인에는 충분하다. 일반 회원에게도 열려면 Authentication → Emails → **SMTP Settings**에 자체 메일 서버(Resend·SES 등)를 넣는다.
+   - 같은 주소로는 60초에 한 번만 보낼 수 있다. 화면의 "다시 보내기"도 60초를 기다린다.
+4. (선택) 다른 기기에서 링크를 열어도 로그인되게 하려면 Emails → Templates의 **Magic Link**와 **Confirm signup** 링크를 아래처럼 바꾼다. `/auth/callback`이 `token_hash`도 처리한다.
+   ```html
+   <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email">로그인</a>
+   ```
+
+**가입과 프로필**
+
+- 처음 쓰는 이메일이면 계정이 새로 생기고, 가입 트리거(`omu_handle_new_user`)가 `profiles`를 만든다.
+- 이메일 가입자는 이름 정보가 없으므로 닉네임은 **이메일 앞부분**(30자까지), 그것도 없으면 `회원xxxxxx`로 채운다. 닉네임이 비어 가입이 실패하지 않는다. (마이그레이션 불필요)
+- 새 계정은 `role = 'user'`로 시작하므로 `/admin`은 "접근 권한이 없어요"가 나온다. 관리자 지정은 3-3의 SQL 한 줄로 한다.
+- `todaymusic2407@gmail.com`은 링크를 눌러 이메일 인증이 끝나는 순간 자동으로 admin이 된다(`omu_handle_user_updated`).
 
 ## 4. 네이버 연결: 현재 **준비 중**
 
@@ -164,5 +196,5 @@ A와 B가 모두 안 될 때만 고려한다.
 
 1. `cp .env.example .env.local` 후 Supabase URL과 anon 키를 입력한다.
 2. Supabase → Authentication → URL Configuration → Redirect URLs에 `http://localhost:3000/**`를 추가한다.
-3. `npm run dev`를 실행하고 http://localhost:3000/login 에서 카카오로 로그인한다.
+3. `npm run dev`를 실행하고 http://localhost:3000/login 에서 카카오로 로그인한다. 카카오 키가 없으면 "이메일로 로그인"에 주소를 넣고 메일의 링크를 같은 브라우저에서 연다.
 4. 로그인하면 헤더에 닉네임이 표시되는지 확인한다. 관리자 계정이면 메뉴에 "관리자 페이지"가 보여야 한다.

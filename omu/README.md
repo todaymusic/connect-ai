@@ -39,7 +39,7 @@ proxy.ts             Supabase 세션 갱신 (Next 16의 middleware)
 supabase/schema.sql  DB 스키마 (SQL Editor에서 1회 실행) — SCHEMA_README.md 참고
 supabase/migrations/ schema.sql 이후 추가 변경 (예: 20260929_write_fields.sql)
 supabase/functions/  Edge Function 초안 (네이버 userinfo 프록시, 미배포)
-docs/AUTH.md         카카오·네이버 로그인 설계
+docs/AUTH.md         카카오·네이버·이메일 로그인 설계
 DEPLOYMENT.md        Vercel 배포 순서와 체크리스트 (Root Directory = omu)
 ```
 
@@ -130,7 +130,7 @@ NEXT_PUBLIC_OMU_OPEN_WRITE=                 # 비우면 둘 다 닫힘
    - `schema.sql` → `migrations/20260929_write_fields.sql` → `migrations/20260930_guest_community.sql` 을 이어 붙인 파일이다.
    - DROP 없음, 여러 번 실행해도 안전(새 DB·예전 schema.sql 을 실행한 DB 모두 두 번 실행해 확인).
    - 원본을 고치면 `npm run db:setup-sql` 로 다시 만든다(직접 고치지 말 것).
-2. 카카오(또는 이메일)로 한 번 가입·로그인한다(가입하면 `profiles` 행이 자동으로 생긴다).
+2. 카카오 또는 `/login` 의 **이메일로 로그인**(메일로 받은 링크, 비밀번호 없음)으로 한 번 가입·로그인한다(가입하면 `profiles` 행이 자동으로 생긴다. 이메일 가입자의 닉네임은 이메일 앞부분).
 3. 관리자로 지정한다 — SQL Editor 에서 한 줄 실행 (이메일만 바꿔서):
 
 ```sql
@@ -149,6 +149,7 @@ update public.profiles set role = 'admin' where id = (select id from auth.users 
 - ✅ 메타데이터·JSON-LD·sitemap.xml·robots.txt, 약관·개인정보·문의 초안
 - ✅ 소셜 로그인
   - 카카오: 실제 OAuth 흐름 연결
+  - 이메일 로그인 링크: 카카오 키 없이도 관리자 로그인 가능 (`NEXT_PUBLIC_AUTH_EMAIL_ENABLED`, `docs/AUTH.md` 3-4)
   - 네이버: 준비 중 (`docs/AUTH.md` 참고)
 - ✅ `/admin` 권한 가드와 대시보드 골격
 - ⏳ 1:1 채팅, 장터·구인 글 **수정**(삭제는 됨), Q&A 답변 채택 버튼, 관리자 등록·역할 변경·스토리지 정리, CAPTCHA(도배가 심해지면)

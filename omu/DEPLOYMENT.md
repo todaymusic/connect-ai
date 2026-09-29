@@ -68,7 +68,9 @@
    - Authentication → Sign In / Providers → Kakao ([`docs/AUTH.md`](docs/AUTH.md) 3장)
 5. **네이버**
    - 준비 중이다. 연결을 검증할 때 [`docs/AUTH.md`](docs/AUTH.md) 4장을 따른다.
-6. **Email Provider의 Confirm email은 켠 상태로 둔다.**
+6. **Email Provider와 Confirm email은 켠 상태로 둔다.**
+   - `/login`의 "이메일로 로그인"(메일 링크)이 이 Provider를 쓴다. 카카오 키가 없어도 관리자가 로그인할 수 있다.
+   - 기본 메일 서버는 프로젝트 팀원 주소로만, 시간당 몇 통만 보낸다. 일반 회원에게 열려면 SMTP 설정이 필요하다([`docs/AUTH.md`](docs/AUTH.md) 3-4).
    - `schema.sql`은 이메일 인증이 끝난 계정만 최초 관리자로 승격한다.
 
 ## 2단계: 카카오 / 네이버 개발자 콘솔
@@ -103,6 +105,7 @@
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | ✅ | anon/publishable 키 (공개 키) |
 | `NEXT_PUBLIC_SITE_URL` | ✅ `https://omu.kr` (오픈 전엔 vercel 주소) | 비워도 됨 (자동 추정) | canonical·OG 기준 주소, 끝에 `/` 없이 |
 | `NEXT_PUBLIC_AUTH_KAKAO_ENABLED` | `true` | `true` | Supabase에서 Kakao를 켜기 전이면 `false` |
+| `NEXT_PUBLIC_AUTH_EMAIL_ENABLED` | `true` | `true` | 이메일 로그인 링크(비밀번호 없음). `false`면 숨김 |
 | `NEXT_PUBLIC_NAVER_PROVIDER_ID` | (검증 후) `custom:naver` | (선택) | 비우면 "네이버 로그인 준비 중" |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | 오픈 시 | — | 구글 서치콘솔 소유확인 |
 | `NEXT_PUBLIC_NAVER_SITE_VERIFICATION` | 오픈 시 | — | 네이버 서치어드바이저 소유확인 |
@@ -185,6 +188,7 @@
 **로그인**
 - [ ] `/login`에서 카카오 로그인 → 동의 → 원래 페이지로 돌아온다. 헤더에 닉네임이 보인다.
 - [ ] Supabase Table Editor에서 `profiles`에 새 행이 생겼는지 확인한다.
+- [ ] `/login` → "이메일로 로그인"에 관리자 이메일 입력 → 메일의 링크를 **같은 브라우저**에서 열면 로그인된다. 관리자로 지정한 뒤 `/admin` 대시보드가 보인다.
 - [ ] 로그아웃 후 헤더가 "로그인"으로 돌아온다.
 - [ ] 네이버 버튼이 "준비 중"으로 비활성화돼 있다(또는 검증 후 정상 로그인된다).
 
@@ -222,6 +226,8 @@
 | 로그인 후 `/login?error=exchange_failed` | Supabase Redirect URLs에 해당 도메인이 있는지. 로그인 시작과 콜백 도메인이 같은지(쿠키) |
 | 카카오 "KOE006" 등 Redirect URI 오류 | 카카오 콘솔 Redirect URI가 Supabase `/auth/v1/callback`인지 |
 | 카카오 로그인 후 이메일 관련 오류 | 비즈 앱 이메일 동의항목, 또는 Supabase Kakao의 "Allow users without an email" |
+| 이메일 로그인 링크 메일이 안 옴 | 기본 메일 서버는 팀원 주소로만·시간당 몇 통만 보낸다. 스팸함 확인, 또는 SMTP 설정 |
+| 이메일 링크를 눌렀더니 "요청한 브라우저에서 열어야 해요" | 메일 앱 내장 브라우저 등 다른 브라우저에서 열었다. 같은 브라우저에서 다시 요청 |
 | 로그인은 되는데 관리자가 아님 | `profiles.role` 확인. 최초 관리자는 이메일 인증된 계정만 자동 승격 |
 | 환경변수를 바꿨는데 그대로 | `NEXT_PUBLIC_*`는 빌드 시 고정 → Redeploy |
 | 관리자 대시보드 숫자가 "—" | `schema.sql` 미적용 또는 관리자 권한 아님 |

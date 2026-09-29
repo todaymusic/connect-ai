@@ -11,6 +11,15 @@ export async function proxy(request: NextRequest) {
   const env = getSupabasePublicEnv();
   if (!env) return NextResponse.next({ request });
 
+  // 로그인 콜백 URL 이 Supabase Redirect URLs 에 없으면 Supabase 가 Site URL(/)로 code(또는 오류)를 보낸다.
+  // 그대로 두면 로그인이 끝나지 않으므로 콜백으로 넘겨 세션을 만든다(OAuth·이메일 링크 공통).
+  const q = request.nextUrl.searchParams;
+  if (request.nextUrl.pathname === "/" && (q.has("code") || (q.has("error") && q.has("error_description")))) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    return NextResponse.redirect(url);
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(env.url, env.anonKey, {
