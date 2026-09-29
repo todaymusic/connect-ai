@@ -47,13 +47,18 @@ export function WriteGate({ kind, message, next, demo }: { kind: "signed-out" | 
       <p className="mt-2 text-sm leading-relaxed text-ink-2">{message}</p>
       <div className="mt-6 flex flex-wrap justify-center gap-2.5">
         {kind === "signed-out" ? (
-          demo ? (
-            <p className="text-sm text-ink-3">위 ‘데모 작성 모드’에서 역할을 골라 보세요.</p>
-          ) : (
-            <Link href={`/login?next=${encodeURIComponent(next)}`} className="inline-flex h-11 items-center rounded-full bg-coral px-6 text-sm font-bold text-white hover:bg-coral-deep">
-              로그인하기
+          <>
+            {demo ? (
+              <p className="w-full text-sm text-ink-3">위 ‘데모 작성 모드’에서 역할을 골라 보세요.</p>
+            ) : (
+              <Link href={`/login?next=${encodeURIComponent(next)}`} className="inline-flex h-11 items-center rounded-full bg-coral px-6 text-sm font-bold text-white hover:bg-coral-deep">
+                로그인하기
+              </Link>
+            )}
+            <Link href="/write/community" className="inline-flex h-11 items-center rounded-full border border-line-2 bg-card px-6 text-sm font-bold text-ink hover:border-ink-3">
+              로그인 없이 커뮤니티 글 쓰기
             </Link>
-          )
+          </>
         ) : (
           <Link href="/write/score-request" className="inline-flex h-11 items-center rounded-full bg-coral px-6 text-sm font-bold text-white hover:bg-coral-deep">
             악보 요청하기

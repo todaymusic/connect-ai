@@ -1,9 +1,10 @@
 import "server-only";
 
 import type { CommunityCategory, QnaSubject } from "../site";
-import { DEFAULT_PAGE_SIZE, PROFILE_COLS, byNewest, likePattern, matches, paginate, range, toAuthor, toPaged } from "./core";
+import { DEFAULT_PAGE_SIZE, PROFILE_COLS, byNewest, likePattern, matches, paginate, range, toAuthor, toPaged, withLegacyColumns } from "./core";
 import { DEMO_COMMENTS, DEMO_POSTS } from "./demo/posts";
 import { publicDb } from "./source";
+import { buildThreads } from "./threads";
 import type { Comment, CommentTarget, CommentThread, Paged, Post } from "./types";
 
 export type PostFilter = {
@@ -18,8 +19,11 @@ export type PostFilter = {
 };
 
 // ⚠️ posts.author_id 는 컬럼 권한상 읽을 수 없다(익명 보호). 공개용 public_author_id 로 조인한다.
-const POST_COLS = `id, category, qna_subject, title, content, youtube_url, is_anonymous, author_display, is_answered,
+// 숨김(삭제)된 글은 RLS 가 비회원·회원 조회에서 빼 준다(20260930 마이그레이션).
+const POST_BASE = `id, category, qna_subject, title, content, youtube_url, is_anonymous, author_display, is_answered,
   tags, view_count, comment_count, created_at, author:profiles!posts_public_author_id_fkey(${PROFILE_COLS})`;
+/** extended = 20260930 마이그레이션 컬럼 포함 */
+const postCols = (extended: boolean) => (extended ? `${POST_BASE}, guest_name, edited_at` : POST_BASE);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapPost(r: any): Post {
@@ -41,6 +45,8 @@ function mapPost(r: any): Post {
     commentCount: r.comment_count ?? 0,
     createdAt: r.created_at,
     relatedScoreSlug: null,
+    guestName: r.guest_name ?? null,
+    editedAt: r.edited_at ?? null,
   };
 }
 
@@ -48,14 +54,16 @@ export async function listPosts(f: PostFilter = {}): Promise<Paged<Post>> {
   const pageSize = f.pageSize ?? DEFAULT_PAGE_SIZE;
   const db = publicDb();
   if (db) {
-    let q = db.from("posts").select(POST_COLS, { count: "exact" });
-    if (f.category) q = q.eq("category", f.category);
-    if (f.subject) q = q.eq("qna_subject", f.subject);
-    if (f.unanswered) q = q.eq("is_answered", false);
-    if (f.q) q = q.ilike("title", likePattern(f.q));
-    q = f.sort === "popular" ? q.order("view_count", { ascending: false }) : q.order("created_at", { ascending: false });
     const [from, to] = range(f.page ?? 1, pageSize);
-    const { data, count, error } = await q.range(from, to);
+    const { data, count, error } = await withLegacyColumns((ext) => {
+      let q = db.from("posts").select(postCols(ext), { count: "exact" });
+      if (f.category) q = q.eq("category", f.category);
+      if (f.subject) q = q.eq("qna_subject", f.subject);
+      if (f.unanswered) q = q.eq("is_answered", false);
+      if (f.q) q = q.ilike("title", likePattern(f.q));
+      q = f.sort === "popular" ? q.order("view_count", { ascending: false }) : q.order("created_at", { ascending: false });
+      return q.range(from, to);
+    });
     if (error) throw new Error(`게시글 목록을 불러오지 못했어요: ${error.message}`);
     return toPaged((data ?? []).map(mapPost), count ?? 0, f.page ?? 1, pageSize);
   }
@@ -74,30 +82,33 @@ export async function getPost(category: string, id: string): Promise<Post | null
   const db = publicDb();
   if (db) {
     if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
-    const { data, error } = await db.from("posts").select(POST_COLS).eq("id", id).eq("category", category).maybeSingle();
+    const { data, error } = await withLegacyColumns((ext) => db.from("posts").select(postCols(ext)).eq("id", id).eq("category", category).maybeSingle());
     if (error) throw new Error(`게시글을 불러오지 못했어요: ${error.message}`);
     return data ? mapPost(data) : null;
   }
   return DEMO_POSTS.find((p) => p.id === id && p.category === category) ?? null;
 }
 
-/* ───────── 댓글 (읽기 전용) ───────── */
+/* ───────── 댓글 ───────── */
 
-const COMMENT_COLS = `id, target_type, target_id, parent_id, content, is_anonymous, is_accepted, created_at,
+const COMMENT_BASE = `id, target_type, target_id, parent_id, content, is_anonymous, is_accepted, created_at,
   author:profiles!comments_public_author_id_fkey(${PROFILE_COLS})`;
+const commentCols = (extended: boolean) => (extended ? `${COMMENT_BASE}, guest_name, edited_at` : COMMENT_BASE);
 
 /** 대상 글의 댓글을 1단계 답글 구조로 묶어 돌려준다. 채택 답변이 맨 위. */
 export async function listComments(targetType: CommentTarget, targetId: string): Promise<CommentThread[]> {
   let rows: Comment[];
   const db = publicDb();
   if (db) {
-    const { data, error } = await db
-      .from("comments")
-      .select(COMMENT_COLS)
-      .eq("target_type", targetType)
-      .eq("target_id", targetId)
-      .order("created_at", { ascending: true })
-      .limit(300);
+    const { data, error } = await withLegacyColumns((ext) =>
+      db
+        .from("comments")
+        .select(commentCols(ext))
+        .eq("target_type", targetType)
+        .eq("target_id", targetId)
+        .order("created_at", { ascending: true })
+        .limit(300),
+    );
     if (error) throw new Error(`댓글을 불러오지 못했어요: ${error.message}`);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rows = (data ?? []).map((r: any) => ({
@@ -110,14 +121,13 @@ export async function listComments(targetType: CommentTarget, targetId: string):
       isAccepted: Boolean(r.is_accepted),
       author: r.is_anonymous ? null : toAuthor(r.author),
       createdAt: r.created_at,
+      guestName: r.guest_name ?? null,
+      editedAt: r.edited_at ?? null,
     }));
   } else {
     rows = DEMO_COMMENTS.filter((c) => c.targetType === targetType && c.targetId === targetId).sort((a, b) =>
       a.createdAt < b.createdAt ? -1 : 1,
     );
   }
-  const roots: CommentThread[] = rows.filter((c) => !c.parentId).map((c) => ({ ...c, replies: [] }));
-  const byId = new Map(roots.map((c) => [c.id, c]));
-  for (const c of rows) if (c.parentId) byId.get(c.parentId)?.replies.push(c);
-  return roots.sort((a, b) => Number(b.isAccepted) - Number(a.isAccepted));
+  return buildThreads(rows);
 }

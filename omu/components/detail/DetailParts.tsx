@@ -1,11 +1,10 @@
 import Link from "next/link";
-import { ChevronRight, Flag, MessageCircle } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
-import type { CommentThread } from "@/lib/data/types";
-import { formatDateTime, formatRelative } from "@/lib/format";
+import { getDataSource } from "@/lib/data/source";
+import type { CommentTarget, CommentThread } from "@/lib/data/types";
 import { siteUrl } from "@/lib/site";
-import { Badge } from "../ui";
-import { AuthorLabel } from "./AuthorLabel";
+import { CommentsLive } from "../interact/CommentsLive";
 
 /* ───────── JSON-LD ───────── */
 export function JsonLd({ data }: { data: Record<string, unknown> }) {
@@ -108,96 +107,40 @@ export function YouTubeEmbed({ url, title }: { url: string | null; title: string
   );
 }
 
-/* ───────── 신고 (준비 중) ───────── */
-export function ReportButton() {
-  return (
-    <button
-      type="button"
-      disabled
-      title="신고 기능은 곧 열려요"
-      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-ink-3 disabled:cursor-not-allowed"
-    >
-      <Flag aria-hidden className="size-3.5" />
-      신고 <span className="rounded-full bg-stone px-1.5 text-[10px]">준비 중</span>
-    </button>
-  );
-}
+/* ───────── 신고 ───────── */
+export { ReportButton } from "../interact/ReportButton";
 
-/* ───────── 댓글 (읽기 전용) ───────── */
+/* ───────── 댓글 (읽기 + 작성·답글·수정·삭제·신고) ───────── */
 export function CommentsSection({
   threads,
-  count,
   title = "댓글",
   acceptable = false,
+  threadType,
+  threadId,
+  path,
+  threadGuestName = null,
 }: {
   threads: CommentThread[];
-  count: number;
   title?: string;
   /** Q&A 처럼 채택 표시를 쓰는 곳 */
   acceptable?: boolean;
+  threadType: CommentTarget;
+  threadId: string;
+  /** 이 글의 주소 */
+  path: string;
+  threadGuestName?: string | null;
 }) {
   return (
-    <section aria-labelledby="comments-title" className="mt-10">
-      <h2 id="comments-title" className="flex items-center gap-2 text-lg font-extrabold text-ink">
-        <MessageCircle aria-hidden className="size-5" />
-        {title} <span className="font-display text-ink-3">{count}</span>
-      </h2>
-
-      {threads.length === 0 ? (
-        <p className="mt-4 rounded-2xl bg-stone px-4 py-6 text-center text-sm text-ink-2">아직 {title}이 없어요.</p>
-      ) : (
-        <ul className="mt-4 space-y-3">
-          {threads.map((c) => (
-            <li key={c.id} className={`card p-4 ${c.isAccepted ? "border-blue/50" : ""}`}>
-              <CommentBody c={c} acceptable={acceptable} />
-              {c.replies.length > 0 && (
-                <ul className="mt-3 space-y-3 border-l-2 border-line pl-4">
-                  {c.replies.map((r) => (
-                    <li key={r.id}>
-                      <CommentBody c={r} acceptable={false} />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* 댓글 작성은 다음 단계 — 자리는 미리 보여준다 */}
-      <div className="mt-4 rounded-2xl border border-line bg-card p-4">
-        <label htmlFor="comment-draft" className="text-sm font-semibold text-ink-2">
-          {title} 쓰기
-        </label>
-        <textarea
-          id="comment-draft"
-          disabled
-          rows={2}
-          placeholder={`${title} 작성은 곧 열려요.`}
-          className="mt-2 w-full resize-none rounded-xl border border-line bg-stone px-3 py-2 text-sm placeholder:text-ink-3 disabled:cursor-not-allowed"
-        />
-        <div className="mt-2 flex justify-end">
-          <button type="button" disabled className="h-9 rounded-full bg-stone px-4 text-sm font-bold text-ink-3 disabled:cursor-not-allowed">
-            등록 (준비 중)
-          </button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CommentBody({ c, acceptable }: { c: CommentThread | CommentThread["replies"][number]; acceptable: boolean }) {
-  return (
-    <div>
-      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-3">
-        <AuthorLabel author={c.author} anonymous={c.isAnonymous} />
-        <time dateTime={c.createdAt} title={formatDateTime(c.createdAt)}>
-          {formatRelative(c.createdAt)}
-        </time>
-        {acceptable && c.isAccepted && <Badge tone="blue">채택된 답변</Badge>}
-      </p>
-      <p className="mt-1.5 whitespace-pre-line text-[15px] leading-relaxed text-ink">{c.content}</p>
-    </div>
+    <CommentsLive
+      threadType={threadType}
+      threadId={threadId}
+      path={path}
+      initial={threads}
+      title={title}
+      acceptable={acceptable}
+      mode={getDataSource()}
+      threadGuestName={threadGuestName}
+    />
   );
 }
 

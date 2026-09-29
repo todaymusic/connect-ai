@@ -98,10 +98,10 @@ export async function ArticleDetail({ article: a }: { article: Article }) {
           </ul>
         )}
         <div className="mt-6 flex justify-end">
-          <ReportButton />
+          <ReportButton targetType="article" targetId={a.id} title={a.title} path={articlePath(a.category, a.slug)} />
         </div>
 
-        <CommentsSection threads={comments} count={comments.reduce((n, c) => n + 1 + c.replies.length, 0)} />
+        <CommentsSection threads={comments} threadType="article" threadId={a.id} path={articlePath(a.category, a.slug)} />
       </div>
 
       {related.length > 0 && (

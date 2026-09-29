@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { CheckCircle2, Loader2, TriangleAlert } from "lucide-react";
 import { startTransition, useActionState, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import type { WriteResult } from "@/lib/write/actions";
+import { getGuestSecret, localWait, markLocal } from "@/lib/guest/client";
+import type { DemoRecord, WriteResult } from "@/lib/write/actions";
 import { saveDemoWrite } from "@/lib/write/demo-store";
 import type { FieldErrors, Raw } from "@/lib/write/validate";
+import { Honeypot, useStartedAt } from "../interact/SpamGuard";
 
 export type FormState = { values: Raw; errors: FieldErrors };
 type Action = (prev: WriteResult, fd: FormData) => Promise<WriteResult>;
@@ -17,6 +19,7 @@ const INITIAL: WriteResult = { status: "idle" };
  *  - 서버 액션으로 제출 (Supabase 모드: 저장 후 상세로 이동 / 데모 모드: 결과를 이 브라우저에만 보관)
  *  - 오류가 나면 입력값을 그대로 되살리고, 오류 요약으로 포커스를 옮긴다
  *  - prepare: 제출 전에 브라우저에서 할 일(예: PDF 를 Storage 에 먼저 업로드)
+ *  - 스팸 방지: 숨은 입력칸(honeypot) + 폼을 연 시각(started_at). 비회원이면 브라우저 비밀값(guest_secret)도 붙인다.
  */
 export function WriteFormShell({
   action,
@@ -24,6 +27,8 @@ export function WriteFormShell({
   children,
   prepare,
   resetHref,
+  guest = false,
+  decorateDemo,
 }: {
   action: Action;
   /** 데모/실제 모드 (데모 안내는 페이지의 역할 선택기가 보여준다) */
@@ -32,6 +37,10 @@ export function WriteFormShell({
   children: (s: FormState) => ReactNode;
   prepare?: (fd: FormData) => Promise<{ ok: true; fd: FormData } | { ok: false; message: string }>;
   resetHref: string;
+  /** 비회원 작성 (브라우저 비밀값·연속 작성 안내) */
+  guest?: boolean;
+  /** 데모 결과를 보관하기 전에 브라우저에서 덧붙일 것(예: 사진 미리보기) */
+  decorateDemo?: (record: DemoRecord) => DemoRecord;
 }) {
   const [state, formAction, pending] = useActionState(action, INITIAL);
   const [preparing, setPreparing] = useState(false);
@@ -39,18 +48,21 @@ export function WriteFormShell({
   const alertRef = useRef<HTMLDivElement>(null);
   const [formKey, setFormKey] = useState(0);
   const [dismissedDemoId, setDismissedDemoId] = useState<string | null>(null);
+  const started = useStartedAt();
 
-  const demoRecord = state.status === "demo" && state.record.id !== dismissedDemoId ? state.record : null;
+  const rawDemo = state.status === "demo" && state.record.id !== dismissedDemoId ? state.record : null;
+  const demoRecord = rawDemo && decorateDemo ? decorateDemo(rawDemo) : rawDemo;
 
   // 데모 결과는 이 브라우저에 보관
   const savedIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (state.status === "demo" && savedIdRef.current !== state.record.id) {
       savedIdRef.current = state.record.id;
-      saveDemoWrite(state.record);
+      saveDemoWrite(decorateDemo ? decorateDemo(state.record) : state.record);
+      if (guest) markLocal("post");
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  }, [state]);
+  }, [state, decorateDemo, guest]);
 
   useEffect(() => {
     if (state.status === "error" || prepareError) alertRef.current?.focus();
@@ -66,6 +78,16 @@ export function WriteFormShell({
     e.preventDefault();
     let fd = new FormData(e.currentTarget);
     setPrepareError(null);
+    fd.set("started_at", String(started.current));
+    if (guest) {
+      // 비회원 연속 작성 안내 (서버·DB 도 따로 막는다)
+      const wait = localWait("post", 30);
+      if (wait > 0) {
+        setPrepareError(`비회원은 30초에 한 번 글을 쓸 수 있어요. ${wait}초 뒤에 다시 시도해 주세요.`);
+        return;
+      }
+      fd.set("guest_secret", getGuestSecret());
+    }
     if (prepare) {
       setPreparing(true);
       const result = await prepare(fd);
@@ -100,6 +122,16 @@ export function WriteFormShell({
               </div>
             ))}
           </dl>
+          {demoRecord.images && demoRecord.images.length > 0 && (
+            <ul className="mt-3 flex flex-wrap gap-2" aria-label="사진 미리보기">
+              {demoRecord.images.map((src, i) => (
+                <li key={i} className="size-20 overflow-hidden rounded-xl bg-stone">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- 브라우저에서 만든 미리보기(data URL) */}
+                  <img src={src} alt={`사진 미리보기 ${i + 1}`} className="size-full object-cover" />
+                </li>
+              ))}
+            </ul>
+          )}
           {demoRecord.body && <p className="mt-3 line-clamp-6 whitespace-pre-line border-t border-line pt-3 text-sm leading-relaxed text-ink-2">{demoRecord.body}</p>}
         </div>
         <div className="mt-5 flex flex-wrap gap-2.5">
@@ -137,6 +169,7 @@ export function WriteFormShell({
       )}
 
       {children(formState)}
+      <Honeypot />
 
       <div className="flex flex-wrap items-center justify-end gap-2.5 border-t border-line pt-5">
         <Link href={resetHref} className="inline-flex h-11 items-center rounded-full px-4 text-sm font-semibold text-ink-3 hover:text-ink">

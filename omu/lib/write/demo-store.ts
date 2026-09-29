@@ -27,6 +27,24 @@ export function saveDemoWrite(record: DemoRecord) {
   }
 }
 
+export function updateDemoWrite(id: string, patch: Partial<DemoRecord>) {
+  try {
+    window.localStorage.setItem(KEY, JSON.stringify(readDemoWrites().map((r) => (r.id === id ? { ...r, ...patch } : r))));
+    window.dispatchEvent(new Event(EVENT));
+  } catch {
+    /* 무시 */
+  }
+}
+
+export function removeDemoWrite(id: string) {
+  try {
+    window.localStorage.setItem(KEY, JSON.stringify(readDemoWrites().filter((r) => r.id !== id)));
+    window.dispatchEvent(new Event(EVENT));
+  } catch {
+    /* 무시 */
+  }
+}
+
 export function clearDemoWrites() {
   try {
     window.localStorage.removeItem(KEY);

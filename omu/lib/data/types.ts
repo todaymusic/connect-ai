@@ -132,6 +132,10 @@ export type Post = {
   createdAt: string;
   /** 이 글과 연결된 악보 slug (곡 중심 동선용, 선택) */
   relatedScoreSlug: string | null;
+  /** 비회원 글이면 자동 표시 이름 (예: 새벽 기타리스트) */
+  guestName: string | null;
+  /** 작성자가 고친 시각 */
+  editedAt: string | null;
 };
 
 export type CommentTarget = "post" | "recruit" | "market" | "article" | "score";
@@ -146,6 +150,10 @@ export type Comment = {
   isAccepted: boolean;
   author: Author | null;
   createdAt: string;
+  guestName: string | null;
+  editedAt: string | null;
+  /** 삭제(숨김)된 댓글 자리 — 답글이 남아 있을 때만 '삭제된 댓글입니다' 로 보인다 */
+  deleted?: boolean;
 };
 
 export type CommentThread = Comment & { replies: Comment[] };

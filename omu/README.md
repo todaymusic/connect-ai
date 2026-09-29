@@ -63,7 +63,7 @@ DEPLOYMENT.md        Vercel 배포 순서와 체크리스트 (Root Directory = o
 
 | 종류 | 주소 | 쓸 수 있는 사람 |
 |---|---|---|
-| 커뮤니티 (자유·Q&A·익명·후기) | `/write/community` | 회원 이상 |
+| 커뮤니티 (자유·Q&A·익명·후기) | `/write/community` | **비회원도 가능** (회원은 닉네임·익명 선택) |
 | 악기/중고장터 (판매·구매·나눔) | `/write/market` | 회원 이상 |
 | 구인·모집 | `/write/recruit` | 회원 이상 |
 | 악보 요청 | `/write/score-request` | 회원 이상 |
@@ -76,14 +76,35 @@ DEPLOYMENT.md        Vercel 배포 순서와 체크리스트 (Root Directory = o
 - **데모 모드:** 화면 상단 "데모 작성 모드" 표시와 역할 선택기(비로그인·회원·에디터·관리자)가 나온다. 제출하면 검증·권한 확인까지 실제와 같이 돌고, 결과는 서버가 아니라 이 브라우저 localStorage(`omu-demo-writes`)에만 보관된다. 역할 쿠키(`omu_demo_role`)는 Supabase 모드에서는 무시된다.
 - 새 입력 항목(태그·모집 역할·마감일·물건 상태)을 쓰려면 `supabase/migrations/20260929_write_fields.sql` 을 schema.sql 다음에 실행해야 한다.
 
+## 비회원 글·댓글, 신고, 수정·삭제, 장터 사진
+
+가입 없이도 바로 참여할 수 있게 **커뮤니티 글·댓글·신고는 로그인 없이** 쓸 수 있다. 장터·구인은 거래 책임 때문에 회원만 쓸 수 있다.
+
+| 기능 | 내용 | 코드 |
+|---|---|---|
+| 자동 표시 이름 | ‘새벽 기타리스트’ 같은 음악 이름 20개 중에서 고른다. 같은 글 안에서는 같은 비회원이 같은 이름, 다른 사람과는 겹치지 않음. 다른 글끼리는 연결되지 않음 | `lib/guest/names.ts` ↔ DB `omu_guest_pick_name` |
+| 비회원 신원 | 브라우저가 만든 32바이트 무작위 값(localStorage `omu-guest-secret`). DB 에는 `sha256(값\|대상)` 해시만 저장. 개인정보 없음 | `lib/guest/client.ts` |
+| 수정·삭제 | 회원은 본인 글(user id), 비회원은 **같은 브라우저**(해시 대조). 삭제는 `deleted_at` 숨김(soft delete) — 관리자만 계속 봄 | `lib/interact/actions.ts`, RPC `omu_edit_*`, `omu_soft_delete` |
+| 댓글 | 모든 상세 페이지. 답글 1단계, 수정·삭제·신고, 회원은 익명 선택. 지운 댓글에 답글이 있으면 ‘삭제된 댓글이에요’ 자리 표시 | `components/interact/CommentsLive.tsx` |
+| 신고 | 글·댓글. 사유 6가지 + 내용, 같은 대상 1회(브라우저 + DB), 연속 신고 제한 | `components/interact/ReportButton.tsx`, RPC `omu_report` |
+| 스팸 방지 | 숨은 입력칸(honeypot), 폼 연 뒤 2초 이내 제출 거절, 최소 길이(제목 2·본문 5·댓글 2자), 연속 작성 제한(브라우저 → 서버 메모리 → **DB 최종**: 글 30초·댓글 10초 간격, 시간당 한도, 같은 접속지 한도, 전체 비회원 폭주 차단) | `lib/guard/server.ts`, DB `omu_throttle` |
+| 장터 사진 | JPG·PNG·WEBP·GIF, 장당 10MB, 6장. Supabase: 브라우저가 `market/<본인 uid>/` 에 올리고 주소만 저장 / 데모: 미리보기만(작은 썸네일을 이 브라우저에 보관) | `components/write/ImagePicker.tsx` |
+| 관리자 | `/admin/reports` 신고 목록(미처리·처리 완료·기각), 처리·기각·대상 숨기기. 대시보드에 비회원 글·댓글 수, market 버킷 상태 | `lib/admin*.ts`, `components/admin/*` |
+
+- **Supabase 모드:** 비회원은 테이블에 직접 쓸 수 없고(anon 권한 없음), 검증된 `SECURITY DEFINER` RPC 로만 쓴다. `service_role` 키는 쓰지 않는다.
+- **데모 모드:** 같은 검증·제한을 서버 액션이 거친 뒤, 결과를 이 브라우저 localStorage 에 보관한다(`omu-demo-comments`, `omu-demo-reports`, `omu-demo-hidden`). 데모에서 ‘관리자’ 역할을 고르면 `/admin` 을 예시 데이터로 미리 볼 수 있다.
+- 비회원 글은 검색엔진에 노출하지 않는다(noindex, sitemap 제외).
+- DB 는 `supabase/migrations/20260930_guest_community.sql` 이 필요하다. 적용 전에는 목록·상세는 그대로 보이고, 비회원 쓰기·댓글·신고는 “DB 업데이트가 필요해요” 안내가 나온다.
+
 ## 현재 상태
 
 - ✅ 헤더와 홈 랜딩, 통합 검색 (데이터 계층 연결)
 - ✅ 악보·음악정보·장비·장터·구인·커뮤니티 목록(탭·필터·검색·페이지)과 상세
 - ✅ 글쓰기 (커뮤니티·장터·구인·악보 요청·악보·정보글), 데모/실제 모드
+- ✅ 비회원 커뮤니티 글·댓글·신고, 자동 표시 이름, 스팸 방지, 수정·삭제(숨김), 장터 사진, 관리자 신고 처리
 - ✅ 메타데이터·JSON-LD·sitemap.xml·robots.txt, 약관·개인정보·문의 초안
 - ✅ 소셜 로그인
   - 카카오: 실제 OAuth 흐름 연결
   - 네이버: 준비 중 (`docs/AUTH.md` 참고)
 - ✅ `/admin` 권한 가드와 대시보드 골격
-- ⏳ 댓글 작성, 신고, 장터 사진 업로드, 1:1 채팅, 글 수정·삭제, 관리자 기능(등록·역할 변경·신고·스토리지)
+- ⏳ 1:1 채팅, 장터·구인 글 **수정**(삭제는 됨), Q&A 답변 채택 버튼, 관리자 등록·역할 변경·스토리지 정리, CAPTCHA(도배가 심해지면)

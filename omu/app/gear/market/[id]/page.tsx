@@ -5,6 +5,7 @@ import { MessageCircle, ShieldAlert } from "lucide-react";
 import { MARKET_ICON, MarketPrice, MarketStatusBadge } from "@/components/cards/MarketCard";
 import { AuthorLabel } from "@/components/detail/AuthorLabel";
 import { Breadcrumbs, CommentsSection, DetailShell, InfoList, JsonLd, ReportButton, SimpleMarkdown, TwoColumn } from "@/components/detail/DetailParts";
+import { ThreadOwnerActions } from "@/components/interact/ThreadOwnerActions";
 import { Badge } from "@/components/ui";
 import { getMarketItem, listMarketItems } from "@/lib/data/market";
 import { listComments } from "@/lib/data/posts";
@@ -84,13 +85,28 @@ export default async function MarketDetailPage({ params }: PageProps<"/gear/mark
       <TwoColumn
         main={
           <>
-            {/* 사진 갤러리 — 사진이 없으면 종류 아이콘 자리표시 */}
-            <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl bg-stone">
-              <Icon aria-hidden className="size-20 text-ink/15" strokeWidth={1.2} />
-              <span className="absolute bottom-3 right-3 rounded-full bg-card/85 px-2.5 py-1 text-xs text-ink-2">
-                {m.imageUrls.length > 0 ? `사진 ${m.imageUrls.length}장` : "등록된 사진 없음"}
-              </span>
-            </div>
+            {/* 사진 갤러리 — 가로로 넘겨 보기. 사진이 없으면 종류 아이콘 자리표시 */}
+            {m.imageUrls.length > 0 ? (
+              <div>
+                <ul className="scrollbar-none flex snap-x snap-mandatory gap-2 overflow-x-auto rounded-2xl" aria-label={`사진 ${m.imageUrls.length}장`}>
+                  {m.imageUrls.map((src, i) => (
+                    <li key={src} className="relative aspect-[4/3] w-full shrink-0 snap-center overflow-hidden rounded-2xl bg-stone">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- Supabase Storage 공개 주소(도메인이 프로젝트마다 다름) */}
+                      <img src={src} alt={`${m.title} 사진 ${i + 1}`} loading={i === 0 ? "eager" : "lazy"} className="size-full object-cover" />
+                      <span className="absolute bottom-3 right-3 rounded-full bg-card/85 px-2.5 py-1 font-display text-xs text-ink-2">
+                        {i + 1} / {m.imageUrls.length}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                {m.imageUrls.length > 1 && <p className="mt-1.5 text-xs text-ink-3">옆으로 넘겨 더 보기</p>}
+              </div>
+            ) : (
+              <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl bg-stone">
+                <Icon aria-hidden className="size-20 text-ink/15" strokeWidth={1.2} />
+                <span className="absolute bottom-3 right-3 rounded-full bg-card/85 px-2.5 py-1 text-xs text-ink-2">등록된 사진 없음</span>
+              </div>
+            )}
 
             <header className="mt-6">
               <div className="flex flex-wrap items-center gap-1.5">
@@ -111,7 +127,7 @@ export default async function MarketDetailPage({ params }: PageProps<"/gear/mark
             <div className="mt-6 border-t border-line pt-6">
               <SimpleMarkdown text={m.description} />
             </div>
-            <CommentsSection title="문의" threads={comments} count={m.commentCount} />
+            <CommentsSection title="문의" threads={comments} threadType="market" threadId={m.id} path={`/gear/market/${m.id}`} />
           </>
         }
         aside={
@@ -154,8 +170,9 @@ export default async function MarketDetailPage({ params }: PageProps<"/gear/mark
                 중고거래 이용 규칙 보기
               </Link>
             </div>
+            <ThreadOwnerActions threadType="market" threadId={m.id} path={`/gear/market/${m.id}`} listPath="/gear/market" />
             <div className="flex justify-end">
-              <ReportButton />
+              <ReportButton targetType="market" targetId={m.id} title={m.title} path={`/gear/market/${m.id}`} />
             </div>
           </>
         }

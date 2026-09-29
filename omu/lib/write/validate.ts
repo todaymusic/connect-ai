@@ -43,7 +43,19 @@ export const LIMITS = {
   positions: 5,
   meta: 160,
   maxPrice: 100_000_000,
+  /** 너무 짧은 글 막기 (비회원 RPC 와 같은 기준) */
+  minTitle: 2,
+  minContent: 5,
+  comment: 2000,
+  minComment: 2,
+  reportDetail: 500,
+  images: 6,
+  imageBytes: 10 * 1024 * 1024,
 } as const;
+
+/** 장터 사진 — schema.sql 의 market 버킷 허용 형식과 같다 */
+export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
+const IMAGE_NAME = /^[^\\<>:"|?*]{1,200}\.(jpe?g|png|webp|gif)$/i;
 
 /* ───────── 공통 도우미 ───────── */
 /** 받침에 맞는 조사 (을/를, 은/는) */
@@ -59,6 +71,9 @@ const bool = (raw: Raw, k: string) => raw[k] === "on" || raw[k] === "true" || ra
 function required(errors: FieldErrors, k: string, v: string, label: string, max: number) {
   if (!v) errors[k] = `${josa(label, "을", "를")} 입력해 주세요.`;
   else if (v.length > max) errors[k] = `${josa(label, "은", "는")} ${max}자 이하로 적어 주세요.`;
+}
+function minLen(errors: FieldErrors, k: string, v: string, label: string, min: number) {
+  if (v && v.length < min && !errors[k]) errors[k] = `${josa(label, "이", "가")} 너무 짧아요. ${min}자 이상 적어 주세요.`;
 }
 function maxLen(errors: FieldErrors, k: string, v: string | null, label: string, max: number) {
   if (v && v.length > max) errors[k] = `${josa(label, "은", "는")} ${max}자 이하로 적어 주세요.`;
@@ -99,8 +114,10 @@ export function validateCommunity(raw: Raw): Validated<CommunityInput> {
   if (category === "qna" && !isKey(QNA_SUBJECTS, subject)) e.qna_subject = "질문 과목을 골라 주세요.";
   const title = str(raw, "title");
   required(e, "title", title, "제목", LIMITS.title);
+  minLen(e, "title", title, "제목", LIMITS.minTitle);
   const content = str(raw, "content");
   required(e, "content", content, "본문", LIMITS.content);
+  minLen(e, "content", content, "본문", LIMITS.minContent);
   const youtube_url = youtube(e, raw);
   const tags = listOf(raw, "tags");
   if (tags.length > LIMITS.tags) e.tags = `태그는 ${LIMITS.tags}개까지 달 수 있어요.`;
@@ -128,6 +145,8 @@ export type MarketInput = {
   region: string;
   item_condition: ItemCondition | null;
   contact: string | null;
+  /** Supabase 모드: market 버킷 경로(<uid>/파일) · 데모 모드: 파일 이름 */
+  images: string[];
 };
 export function validateMarket(raw: Raw): Validated<MarketInput> {
   const e: FieldErrors = {};
@@ -153,7 +172,9 @@ export function validateMarket(raw: Raw): Validated<MarketInput> {
   if (trade === "sell" && !cond) e.item_condition = "판매글은 물건 상태를 골라 주세요.";
   const contact = opt(raw, "contact");
   maxLen(e, "contact", contact, "연락 안내", LIMITS.contact);
+  const images = imageList(e, raw);
   return done(e, {
+    images,
     trade_type: trade as TradeType,
     category: category as MarketCategory,
     title,
@@ -164,6 +185,60 @@ export function validateMarket(raw: Raw): Validated<MarketInput> {
     item_condition: trade === "buy" ? null : (cond as ItemCondition | null),
     contact,
   });
+}
+
+function imageList(e: FieldErrors, raw: Raw): string[] {
+  const v = str(raw, "images");
+  if (!v) return [];
+  let list: unknown;
+  try {
+    list = JSON.parse(v);
+  } catch {
+    list = null;
+  }
+  if (!Array.isArray(list) || list.some((x) => typeof x !== "string")) {
+    e.images = "사진 정보가 올바르지 않아요. 사진을 다시 골라 주세요.";
+    return [];
+  }
+  if (list.length > LIMITS.images) e.images = `사진은 ${LIMITS.images}장까지 올릴 수 있어요.`;
+  else if ((list as string[]).some((x) => !IMAGE_NAME.test(x))) e.images = "JPG·PNG·WEBP·GIF 사진만 올릴 수 있어요.";
+  return list as string[];
+}
+
+/* ───────── 댓글 · 신고 (lib/interact) ───────── */
+export function validateComment(content: string): string | null {
+  const v = content.trim();
+  if (!v) return "댓글을 입력해 주세요.";
+  if (v.length < LIMITS.minComment) return `댓글이 너무 짧아요. ${LIMITS.minComment}자 이상 적어 주세요.`;
+  if (v.length > LIMITS.comment) return `댓글은 ${LIMITS.comment}자 이하로 적어 주세요.`;
+  return null;
+}
+
+export const REPORT_REASONS = {
+  spam: "스팸·광고",
+  abuse: "욕설·비방",
+  illegal: "불법·유해 정보",
+  copyright: "저작권 침해",
+  fraud: "사기·거래 문제",
+  etc: "기타",
+} as const;
+export type ReportReason = keyof typeof REPORT_REASONS;
+
+export function validateReport(reason: string, detail: string): string | null {
+  if (!isKey(REPORT_REASONS, reason)) return "신고 사유를 골라 주세요.";
+  if (reason === "etc" && !detail.trim()) return "기타 사유는 내용을 적어 주세요.";
+  if (detail.length > LIMITS.reportDetail) return `신고 내용은 ${LIMITS.reportDetail}자 이하로 적어 주세요.`;
+  return null;
+}
+
+/** 글 수정(제목·본문·태그) — 커뮤니티 글과 같은 기준 */
+export function validatePostEdit(raw: Raw): Validated<{ title: string; content: string; tags: string[] }> {
+  const v = validateCommunity({ ...raw, category: "free" });
+  if (!v.ok) {
+    const { title, content, tags } = v.errors;
+    return { ok: false, errors: Object.fromEntries(Object.entries({ title, content, tags }).filter(([, m]) => m)) as FieldErrors };
+  }
+  return { ok: true, data: { title: v.data.title, content: v.data.content, tags: v.data.tags } };
 }
 
 /* ───────── 구인·모집 ───────── */

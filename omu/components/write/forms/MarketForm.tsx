@@ -1,17 +1,64 @@
 "use client";
 
-import { ImagePlus } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ITEM_CONDITIONS, MARKET_CATEGORIES, REGIONS, TRADE_TYPES } from "@/lib/site";
-import { submitMarket } from "@/lib/write/actions";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { submitMarket, type DemoRecord } from "@/lib/write/actions";
 import { LIMITS } from "@/lib/write/validate";
 import { ChoiceField, SelectField, TextArea, TextField } from "../fields";
+import { ImagePicker, makeThumbnail } from "../ImagePicker";
 import { WriteFormShell } from "../WriteFormShell";
 
+const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif" };
+
 export function MarketForm({ mode, defaults }: { mode: "demo" | "supabase"; defaults: { trade?: string; category?: string } }) {
+  const files = useRef<File[]>([]);
+  const thumbs = useRef<string[]>([]);
+
+  /**
+   * 제출 전: 사진 처리
+   *  - Supabase: 브라우저에서 market 버킷의 '본인 uid/' 폴더로 올리고 경로만 서버로 보낸다(서버 액션 본문 한도 회피)
+   *  - 데모: 올리지 않고 작은 썸네일만 만들어 이 브라우저에 보관한다
+   */
+  async function prepare(fd: FormData) {
+    const list = files.current;
+    if (list.length === 0) return { ok: true as const, fd };
+    if (mode === "demo") {
+      thumbs.current = (await Promise.all(list.map((f) => makeThumbnail(f)))).filter((t): t is string => Boolean(t));
+      fd.set("images", JSON.stringify(list.map((f, i) => `photo-${i + 1}.${EXT[f.type] ?? "jpg"}`)));
+      return { ok: true as const, fd };
+    }
+    const supabase = getSupabaseBrowserClient();
+    const { data } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
+    const uid = data.user?.id;
+    if (!supabase || !uid) return { ok: false as const, message: "사진을 올리려면 다시 로그인해 주세요." };
+    const stamp = Date.now().toString(36);
+    const paths: string[] = [];
+    for (const [i, f] of list.entries()) {
+      const path = `${uid}/${stamp}-${i + 1}.${EXT[f.type] ?? "jpg"}`;
+      const { error } = await supabase.storage.from("market").upload(path, f, { contentType: f.type, upsert: false });
+      if (error) return { ok: false as const, message: `사진 ${i + 1}을 올리지 못했어요. 형식(JPG·PNG·WEBP·GIF)과 용량(10MB 이하)을 확인해 주세요.` };
+      paths.push(path);
+    }
+    fd.set("images", JSON.stringify(paths));
+    return { ok: true as const, fd };
+  }
+
+  const decorateDemo = useCallback((r: DemoRecord): DemoRecord => (thumbs.current.length ? { ...r, images: thumbs.current } : r), []);
+
   return (
-    <WriteFormShell action={submitMarket} mode={mode} submitLabel="등록하기" resetHref="/gear/market">
-      {({ values, errors }) => <Fields values={values} errors={errors} defaults={defaults} />}
+    <WriteFormShell action={submitMarket} mode={mode} submitLabel="등록하기" resetHref="/gear/market" prepare={prepare} decorateDemo={decorateDemo}>
+      {({ values, errors }) => (
+        <Fields
+          values={values}
+          errors={errors}
+          defaults={defaults}
+          mode={mode}
+          onFiles={(f) => {
+            files.current = f;
+          }}
+        />
+      )}
     </WriteFormShell>
   );
 }
@@ -20,10 +67,14 @@ function Fields({
   values,
   errors,
   defaults,
+  mode,
+  onFiles,
 }: {
   values: Record<string, string | undefined>;
   errors: Record<string, string>;
   defaults: { trade?: string; category?: string };
+  mode: "demo" | "supabase";
+  onFiles: (files: File[]) => void;
 }) {
   const [trade, setTrade] = useState(values.trade_type ?? defaults.trade ?? "sell");
   const isShare = trade === "share";
@@ -108,13 +159,8 @@ function Fields({
         hint="전화번호 대신 ‘댓글로 문의’, 오픈채팅 링크, 연락 가능 시간 등을 권장해요."
         placeholder="예) 댓글 주시면 연락드려요. 평일 저녁 가능"
       />
-      <div className="rounded-xl border border-dashed border-line-2 px-4 py-4 text-sm text-ink-3">
-        <p className="flex items-center gap-2 font-semibold text-ink-2">
-          <ImagePlus aria-hidden className="size-4" />
-          사진 올리기
-        </p>
-        <p className="mt-1">사진 업로드는 다음 업데이트에서 열려요. 지금은 설명에 상태를 자세히 적어 주세요.</p>
-      </div>
+      <ImagePicker onChange={onFiles} error={errors.images} />
+      {mode === "demo" && <p className="-mt-3 text-xs text-ink-3">데모 모드에서는 사진을 서버에 올리지 않고 이 브라우저에서 미리보기만 해요.</p>}
     </>
   );
 }

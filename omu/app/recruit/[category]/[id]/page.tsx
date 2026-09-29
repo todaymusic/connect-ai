@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Globe, MapPin, Send } from "lucide-react";
 import { DeadlineBadge } from "@/components/cards/RecruitCard";
 import { AuthorLabel } from "@/components/detail/AuthorLabel";
+import { ThreadOwnerActions } from "@/components/interact/ThreadOwnerActions";
 import { Breadcrumbs, CommentsSection, DetailShell, InfoList, ReportButton, SimpleMarkdown, TwoColumn } from "@/components/detail/DetailParts";
 import { Badge, LevelBadge } from "@/components/ui";
 import { listComments } from "@/lib/data/posts";
@@ -82,7 +83,7 @@ export default async function RecruitDetailPage({ params }: PageProps<"/recruit/
             <div className="mt-6 border-t border-line pt-6">
               <SimpleMarkdown text={r.description} />
             </div>
-            <CommentsSection title="지원·문의" threads={comments} count={r.commentCount} />
+            <CommentsSection title="지원·문의" threads={comments} threadType="recruit" threadId={r.id} path={`/recruit/${r.category}/${r.id}`} />
           </>
         }
         aside={
@@ -119,8 +120,9 @@ export default async function RecruitDetailPage({ params }: PageProps<"/recruit/
               </button>
               <p className="mt-2 text-xs text-ink-3">연락처를 주고받을 때는 개인정보가 필요 이상 노출되지 않게 주의해 주세요.</p>
             </div>
+            <ThreadOwnerActions threadType="recruit" threadId={r.id} path={`/recruit/${r.category}/${r.id}`} listPath="/recruit" />
             <div className="flex justify-end">
-              <ReportButton />
+              <ReportButton targetType="recruit" targetId={r.id} title={r.title} path={`/recruit/${r.category}/${r.id}`} />
             </div>
           </>
         }

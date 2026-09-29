@@ -50,3 +50,19 @@ export function toAuthor(row: ProfileRow | ProfileRow[]): Author | null {
 
 /** 프로필 조인 select 조각 (email 은 컬럼 권한상 읽을 수 없으므로 절대 넣지 않는다) */
 export const PROFILE_COLS = "id, nickname, role";
+
+/**
+ * 새 마이그레이션 컬럼이 아직 없는 DB(마이그레이션 미적용)에서도 목록이 깨지지 않게,
+ * '없는 컬럼' 오류면 예전 컬럼 목록으로 한 번 더 시도한다.
+ */
+export function isMissingColumn(e: { code?: string; message?: string } | null | undefined): boolean {
+  if (!e) return false;
+  return e.code === "42703" || e.code === "PGRST204" || /column .* does not exist/i.test(e.message ?? "");
+}
+
+export async function withLegacyColumns<R extends { error: { code?: string; message?: string } | null }>(
+  run: (extended: boolean) => PromiseLike<R>,
+): Promise<R> {
+  const first = await run(true);
+  return isMissingColumn(first.error) ? run(false) : first;
+}

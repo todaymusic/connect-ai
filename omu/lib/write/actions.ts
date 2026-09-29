@@ -18,6 +18,9 @@ import {
   articlePath,
 } from "../site";
 import { getDataSource } from "../data/source";
+import { marketImageUrl } from "../data/storage";
+import { pickGuestName } from "../guest/names";
+import { GUEST_SECRET_PATTERN, clientKey, guestHashServer, memThrottle, rpcMessage, spamCheck } from "../guard/server";
 import { getSupabaseServerClient } from "../supabase/server";
 import { DEMO_ROLE_COOKIE, DEMO_ROLES, canWrite, denyReason, type WriteType } from "./config";
 import {
@@ -43,6 +46,13 @@ export type DemoRecord = {
   /** 미리보기에 보여줄 [항목, 값] */
   fields: [string, string][];
   body: string;
+  /** 비회원 글: 자동 표시 이름 + 소유 확인용 해시(sha256(비밀값|post:id)) */
+  guest?: { name: string; tag: string };
+  /** 데모 장터 사진 미리보기(작은 썸네일 data URL — 브라우저에서 붙인다) */
+  images?: string[];
+  editedAt?: string;
+  /** 커뮤니티 글 원본 값 (보관함에서 수정할 때 사용) */
+  edit?: { title: string; content: string; tags: string };
 };
 
 export type WriteResult =
@@ -54,7 +64,11 @@ type Insert = { table: string; row: Record<string, unknown>; select: string };
 type Plan<T> = {
   type: WriteType;
   validate: (raw: Raw) => Validated<T>;
-  insert: (data: T, writer: Writer) => Insert;
+  insert: (data: T, writer: Writer) => Insert | { error: string };
+  /** 비회원 저장 (Supabase RPC). 없으면 비회원은 쓸 수 없다 */
+  guestRpc?: (data: T, secret: string, client: string) => { fn: string; args: Record<string, unknown> };
+  /** 데모 보관함에서 다시 고칠 수 있게 원본 값을 남긴다 */
+  editable?: (data: T) => DemoRecord["edit"];
   /** 저장 후 이동할 주소 (insert 결과 행을 받는다) */
   path: (data: T, row: Record<string, string>) => string;
   revalidate: string[];
@@ -74,25 +88,64 @@ async function run<T>(plan: Plan<T>, fd: FormData): Promise<WriteResult> {
   const raw = formToRaw(fd);
   const state = await getWriterState();
   const writer = state.writer;
-  if (!writer) return { status: "error", message: "로그인한 회원만 글을 쓸 수 있어요.", values: raw };
-  if (!canWrite(writer.role, plan.type)) return { status: "error", message: denyReason(writer.role, plan.type) ?? "권한이 없어요.", values: raw };
+  const guest = !writer;
+  if (!canWrite(writer?.role ?? null, plan.type) || (guest && !plan.guestRpc)) {
+    return { status: "error", message: denyReason(writer?.role ?? null, plan.type) ?? "권한이 없어요.", values: raw };
+  }
+
+  // 스팸 방지: 숨은 입력칸(honeypot)은 모두, 작성 시간 검사는 비회원만
+  const spam = guest ? spamCheck({ website: raw.website, startedAt: raw.started_at }) : raw.website ? spamCheck({ website: raw.website }) : null;
+  if (spam) return { status: "error", message: spam, values: raw };
+  const secret = raw.guest_secret ?? "";
+  if (guest && !GUEST_SECRET_PATTERN.test(secret)) {
+    return { status: "error", message: "비회원 확인 정보가 없어요. 페이지를 새로 고친 뒤 다시 시도해 주세요.", values: raw };
+  }
 
   const v = plan.validate(raw);
   if (!v.ok) return { status: "error", message: "입력한 내용을 확인해 주세요.", fieldErrors: v.errors, values: raw };
 
+  // 연속 작성 제한 (서버 메모리 — 최종 방어는 DB)
+  const client = await clientKey();
+  const limited =
+    memThrottle("post", guest ? `c:${client}` : `u:${writer.id}:${plan.type}`, guest) ??
+    (guest ? memThrottle("post", `g:${guestHashServer(secret, "actor")}`, true) : null);
+  if (limited) return { status: "error", message: limited, values: raw };
+
   // 데모 모드: 서버에 저장하지 않고, 검증을 통과한 결과만 돌려준다(브라우저가 localStorage 에 보관)
   if (state.mode === "demo") {
     const p = plan.preview(v.data);
+    const id = `demo-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    const tag = guest ? guestHashServer(secret, `post:${id}`) : null;
+    const guestInfo = tag ? { name: pickGuestName(tag, []), tag } : undefined;
     return {
       status: "demo",
-      record: { id: `demo-${Date.now().toString(36)}`, type: plan.type, createdAt: new Date().toISOString(), ...p },
+      record: {
+        id,
+        type: plan.type,
+        createdAt: new Date().toISOString(),
+        ...p,
+        fields: guestInfo ? [["작성자 표시", `${guestInfo.name} (비회원)`], ...p.fields.filter(([k]) => k !== "작성자 표시")] : p.fields,
+        guest: guestInfo,
+        edit: plan.editable?.(v.data),
+      },
     };
   }
 
   const supabase = await getSupabaseServerClient();
   if (!supabase) return { status: "error", message: "로그인 서버에 연결하지 못했어요.", values: raw };
-  const { table, row, select } = plan.insert(v.data, writer);
-  const { data, error } = await supabase.from(table).insert(row).select(select).single();
+
+  if (guest && plan.guestRpc) {
+    const { fn, args } = plan.guestRpc(v.data, secret, client);
+    const { data, error } = await supabase.rpc(fn, args);
+    const row = Array.isArray(data) ? data[0] : data;
+    if (error || !row?.id) return { status: "error", message: rpcMessage(error, "저장하지 못했어요. 잠시 후 다시 시도해 주세요."), values: raw };
+    plan.revalidate.forEach((p) => revalidatePath(p));
+    redirect(plan.path(v.data, row as Record<string, string>));
+  }
+
+  const ins = plan.insert(v.data, writer as Writer);
+  if ("error" in ins) return { status: "error", message: ins.error, values: raw };
+  const { data, error } = await supabase.from(ins.table).insert(ins.row).select(ins.select).single();
   if (error || !data) return { status: "error", message: dbErrorMessage(error ?? { message: "" }), values: raw };
 
   plan.revalidate.forEach((p) => revalidatePath(p));
@@ -112,6 +165,21 @@ export async function submitCommunity(_prev: WriteResult, fd: FormData): Promise
         select: "id",
         row: { category: d.category, qna_subject: d.qna_subject, title: d.title, content: d.content, youtube_url: d.youtube_url, is_anonymous: d.is_anonymous, tags: d.tags, author_id: w.id },
       }),
+      // 비회원: 검증된 RPC 로만 저장 (anon 은 posts 테이블에 직접 쓸 수 없다)
+      guestRpc: (d, secret, client) => ({
+        fn: "omu_guest_create_post",
+        args: {
+          p_category: d.category,
+          p_qna_subject: d.qna_subject,
+          p_title: d.title,
+          p_content: d.content,
+          p_youtube_url: d.youtube_url,
+          p_tags: d.tags,
+          p_secret: secret,
+          p_client: client,
+        },
+      }),
+      editable: (d) => ({ title: d.title, content: d.content, tags: d.tags.join(", ") }),
       path: (d, r) => `/community/${d.category}/${r.id}`,
       revalidate: ["/community", "/"],
       preview: (d) => ({
@@ -135,7 +203,12 @@ export async function submitMarket(_prev: WriteResult, fd: FormData): Promise<Wr
     {
       type: "market",
       validate: validateMarket,
-      insert: (d, w) => ({ table: "market_items", select: "id", row: { ...d, status: "selling", seller_id: w.id } }),
+      insert: ({ images, ...d }, w) => {
+        // 사진은 브라우저가 market 버킷의 '본인 uid/' 폴더에 먼저 올린다 → 경로가 본인 폴더인지 다시 확인
+        if (images.some((p) => !p.startsWith(`${w.id}/`))) return { error: "사진 정보가 올바르지 않아요. 사진을 다시 골라 주세요." };
+        const image_urls = images.map(marketImageUrl).filter((u): u is string => Boolean(u));
+        return { table: "market_items", select: "id", row: { ...d, image_urls, status: "selling", seller_id: w.id } };
+      },
       path: (_d, r) => `/gear/market/${r.id}`,
       revalidate: ["/gear/market", "/gear", "/"],
       preview: (d) => ({
@@ -148,6 +221,7 @@ export async function submitMarket(_prev: WriteResult, fd: FormData): Promise<Wr
           ["지역", d.region],
           ["물건 상태", d.item_condition ? ITEM_CONDITIONS[d.item_condition] : "—"],
           ["연락 안내", d.contact ?? "—"],
+          ["사진", d.images.length ? `${d.images.length}장 (데모: 이 브라우저에서만 미리보기)` : "없음"],
         ],
       }),
     },

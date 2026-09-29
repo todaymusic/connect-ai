@@ -37,7 +37,9 @@ export default async function WriteHubPage({ searchParams }: PageProps<"/write">
             <strong className="text-ink">{state.writer.nickname}</strong> 님은 <strong className="text-ink">{ROLES[state.writer.role]}</strong> 권한으로 글을 쓸 수 있어요.
           </>
         ) : (
-          "글쓰기는 로그인한 회원만 할 수 있어요. 둘러보기는 로그인 없이 가능해요."
+          <>
+            <strong className="text-ink">커뮤니티 글과 댓글은 로그인 없이 바로</strong> 쓸 수 있어요. 장터·구인·악보 요청은 로그인하면 쓸 수 있어요.
+          </>
         )}
       </p>
 
@@ -58,7 +60,8 @@ export default async function WriteHubPage({ searchParams }: PageProps<"/write">
         {WRITE_TYPES.map((t) => {
           const Icon = ICONS[t.key];
           const allowed = canWrite(role, t.key);
-          const reason = !role ? "로그인 후 쓸 수 있어요" : t.minRole === "editor" ? "에디터·관리자 전용이에요" : "";
+          const reason = t.minRole === "editor" ? "에디터·관리자 전용이에요" : !role ? "로그인 후 쓸 수 있어요" : "";
+          const guestOk = !role && t.guestAllowed;
           return (
             <li key={t.key}>
               <Link
@@ -76,6 +79,9 @@ export default async function WriteHubPage({ searchParams }: PageProps<"/write">
                     {!allowed && <Lock aria-hidden className="size-3.5 text-ink-3" />}
                   </span>
                   <span className="mt-1 block text-[13px] text-ink-2">{t.hint}</span>
+                  {guestOk && (
+                    <span className="mt-2 inline-block rounded-full bg-blue-soft/60 px-2 py-0.5 text-[11px] font-bold text-blue">로그인 없이 바로 쓰기</span>
+                  )}
                   {!allowed && (
                     <span id={`${t.key}-reason`} className="mt-2 inline-block rounded-full bg-stone px-2 py-0.5 text-[11px] font-bold text-ink-3">
                       {reason}

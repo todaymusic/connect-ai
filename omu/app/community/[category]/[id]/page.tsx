@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CheckCircle2, FileMusic, Pin, Tag } from "lucide-react";
 import { AuthorLabel } from "@/components/detail/AuthorLabel";
 import { Breadcrumbs, CommentsSection, DetailShell, JsonLd, ReportButton, SimpleMarkdown, YouTubeEmbed } from "@/components/detail/DetailParts";
+import { ThreadOwnerActions } from "@/components/interact/ThreadOwnerActions";
 import { Badge } from "@/components/ui";
 import { getPost, listComments, listPosts } from "@/lib/data/posts";
 import { getScore, listScores } from "@/lib/data/scores";
@@ -26,8 +27,8 @@ export async function generateMetadata({ params }: PageProps<"/community/[catego
     title: `${p.title} — ${COMMUNITY_CATEGORIES[p.category]}`,
     description,
     alternates: { canonical: `/community/${p.category}/${p.id}` },
-    // 익명 글은 검색 노출하지 않는다
-    robots: p.isAnonymous ? { index: false, follow: true } : undefined,
+    // 익명 글·비회원 글은 검색 노출하지 않는다(스팸 유입 방지)
+    robots: p.isAnonymous || p.guestName ? { index: false, follow: true } : undefined,
     openGraph: { title: p.title, description, type: "article" },
   };
 }
@@ -42,12 +43,12 @@ export default async function PostDetailPage({ params }: PageProps<"/community/[
     listComments("post", p.id),
     p.relatedScoreSlug ? findScore(p.relatedScoreSlug) : Promise.resolve(null),
   ]);
-  const commentTotal = comments.reduce((n, c) => n + 1 + c.replies.length, 0);
-  const url = `${siteUrl()}/community/${p.category}/${p.id}`;
+  const path = `/community/${p.category}/${p.id}`;
+  const url = `${siteUrl()}${path}`;
 
   return (
     <DetailShell>
-      {!p.isAnonymous && (
+      {!p.isAnonymous && !p.guestName && (
         <JsonLd
           data={{
             "@context": "https://schema.org",
@@ -95,8 +96,9 @@ export default async function PostDetailPage({ params }: PageProps<"/community/[
           </div>
           <h1 className="mt-3 text-[24px] font-extrabold leading-snug tracking-tight text-ink sm:text-[28px]">{p.title}</h1>
           <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-3">
-            <AuthorLabel author={p.author} display={p.authorDisplay} anonymous={p.isAnonymous} />
+            <AuthorLabel author={p.author} display={p.authorDisplay} anonymous={p.isAnonymous} guestName={p.guestName} />
             <time dateTime={p.createdAt}>{formatDateTime(p.createdAt)}</time>
+            {p.editedAt && <span title={formatDateTime(p.editedAt)}>(수정됨)</span>}
             <span>조회 {formatCount(p.views)}</span>
           </p>
         </header>
@@ -134,10 +136,27 @@ export default async function PostDetailPage({ params }: PageProps<"/community/[
           </Link>
         )}
 
-        <div className="mt-6 flex justify-end">
-          <ReportButton />
+        <div className="mt-6 space-y-3">
+          <ThreadOwnerActions
+            threadType="post"
+            threadId={p.id}
+            path={path}
+            listPath={`/community/${p.category}`}
+            edit={{ title: p.title, content: p.content, tags: p.tags.join(", ") }}
+          />
+          <div className="flex justify-end">
+            <ReportButton targetType="post" targetId={p.id} title={p.title} path={path} />
+          </div>
         </div>
-        <CommentsSection title={p.category === "qna" ? "답변" : "댓글"} threads={comments} count={commentTotal} acceptable={p.category === "qna"} />
+        <CommentsSection
+          title={p.category === "qna" ? "답변" : "댓글"}
+          threads={comments}
+          acceptable={p.category === "qna"}
+          threadType="post"
+          threadId={p.id}
+          path={path}
+          threadGuestName={p.guestName}
+        />
       </div>
     </DetailShell>
   );

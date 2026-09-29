@@ -14,3 +14,12 @@ export function scoreFileUrl(path: string | null): string | null {
   const clean = path.replace(/^\/+/, "").replace(/^scores\//, "");
   return `${env.url}/storage/v1/object/public/scores/${clean.split("/").map(encodeURIComponent).join("/")}`;
 }
+
+/** 장터 사진 공개 주소 (market 버킷, 경로는 <uid>/파일이름) */
+export function marketImageUrl(path: string): string | null {
+  if (/^https?:\/\//.test(path)) return path;
+  const env = getSupabasePublicEnv();
+  if (!env) return null;
+  const clean = path.replace(/^\/+/, "").replace(/^market\//, "");
+  return `${env.url}/storage/v1/object/public/market/${clean.split("/").map(encodeURIComponent).join("/")}`;
+}

@@ -164,7 +164,7 @@ export default async function ScoreDetailPage({ params }: PageProps<"/score/[ins
               )}
             </section>
 
-            <CommentsSection threads={comments} count={comments.reduce((n, c) => n + 1 + c.replies.length, 0)} />
+            <CommentsSection threads={comments} threadType="score" threadId={score.id} path={`/score/${score.instrument}/${score.slug}`} />
           </>
         }
         aside={
@@ -206,7 +206,7 @@ export default async function ScoreDetailPage({ params }: PageProps<"/score/[ins
               ]}
             />
             <div className="flex justify-end">
-              <ReportButton />
+              <ReportButton targetType="score" targetId={score.id} title={score.title} path={`/score/${score.instrument}/${score.slug}`} />
             </div>
           </>
         }

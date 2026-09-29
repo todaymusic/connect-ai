@@ -6,25 +6,19 @@ import {
   FileMusic,
   Flag,
   FolderOpen,
-  LayoutDashboard,
+  ImageIcon,
   Rocket,
   ShoppingBag,
   UserCog,
+  UserRound,
   Users,
   type LucideIcon,
 } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import type { AdminSummary } from "@/lib/admin";
 import { AdminBadge, Badge } from "../ui";
-
-/* ───────── 좌측(모바일은 상단) 관리자 메뉴 — 대시보드 외에는 준비 중 ───────── */
-const ADMIN_NAV: { label: string; icon: LucideIcon; ready: boolean }[] = [
-  { label: "대시보드", icon: LayoutDashboard, ready: true },
-  { label: "악보·정보글 등록", icon: FileMusic, ready: false },
-  { label: "회원 역할 변경", icon: UserCog, ready: false },
-  { label: "신고 처리", icon: Flag, ready: false },
-  { label: "스토리지 관리", icon: FolderOpen, ready: false },
-];
+import { AdminNav } from "./AdminNav";
 
 function fmt(n: number | null) {
   return n === null ? "—" : n.toLocaleString("ko-KR");
@@ -80,11 +74,6 @@ const UPCOMING: { icon: LucideIcon; title: string; body: string }[] = [
     body: "회원 검색 후 일반 회원 · 에디터 · 관리자 역할 지정. 추가 관리자 3명도 여기서 지정해요.",
   },
   {
-    icon: Flag,
-    title: "신고 처리",
-    body: "신고 목록 확인, 게시물 숨김·삭제, 처리 완료·기각. 익명 글은 실제 작성자 확인 가능.",
-  },
-  {
     icon: FolderOpen,
     title: "스토리지 관리",
     body: "악보 PDF·썸네일·중고 사진 버킷 사용량 확인과 연결 끊긴 파일 정리.",
@@ -124,27 +113,7 @@ export function AdminDashboard({ summary, adminName }: { summary: AdminSummary; 
 
       <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[200px_minmax(0,1fr)]">
         {/* 관리자 메뉴 */}
-        <nav aria-label="관리자 메뉴" className="min-w-0">
-          <ul className="scrollbar-none -mx-4 flex gap-1.5 overflow-x-auto px-4 lg:mx-0 lg:flex-col lg:px-0">
-            {ADMIN_NAV.map((item) => (
-              <li key={item.label} className="shrink-0">
-                <span
-                  aria-current={item.ready ? "page" : undefined}
-                  aria-disabled={!item.ready || undefined}
-                  className={`flex items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-semibold ${
-                    item.ready ? "bg-ink text-paper" : "text-ink-3"
-                  }`}
-                >
-                  <item.icon aria-hidden className="size-4" />
-                  {item.label}
-                  {!item.ready && (
-                    <span className="rounded-full bg-stone px-1.5 py-px text-[10px] font-bold text-ink-3">준비 중</span>
-                  )}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <AdminNav active="dashboard" openReports={reports.open} />
 
         <div className="min-w-0 space-y-8">
           {/* 요약 카드 */}
@@ -181,7 +150,11 @@ export function AdminDashboard({ summary, adminName }: { summary: AdminSummary; 
                 value={reports.open}
                 unit="건"
                 accent={(reports.open ?? 0) > 0}
-                sub={(reports.open ?? 0) > 0 ? "신고 처리 기능 오픈 후 확인할 수 있어요" : "처리할 신고가 없어요"}
+                sub={
+                  <Link href="/admin/reports" className="font-semibold text-ink-2 underline underline-offset-2 hover:text-ink">
+                    {(reports.open ?? 0) > 0 ? "신고 처리하러 가기 →" : "신고 목록 보기 →"}
+                  </Link>
+                }
               />
 
               {/* 스토리지 */}
@@ -205,6 +178,51 @@ export function AdminDashboard({ summary, adminName }: { summary: AdminSummary; 
                   ))}
                 </ul>
               </div>
+            </div>
+          </section>
+
+          {/* 비회원 글·댓글 + 장터 사진 */}
+          <section aria-labelledby="guest-title" className="grid gap-3 sm:grid-cols-2">
+            <div className="card p-4 sm:p-5">
+              <h2 id="guest-title" className="flex items-center gap-2 text-sm font-semibold text-ink-2">
+                <UserRound aria-hidden className="size-4" />
+                비회원 글·댓글 모더레이션
+              </h2>
+              <p className="mt-3 flex items-baseline gap-3 text-sm text-ink-2">
+                <span>
+                  글 <strong className="font-display text-xl text-ink">{fmt(summary.guest.posts)}</strong>
+                </span>
+                <span>
+                  댓글 <strong className="font-display text-xl text-ink">{fmt(summary.guest.comments)}</strong>
+                </span>
+              </p>
+              <ul className="mt-3 space-y-1.5 text-xs leading-relaxed text-ink-2">
+                <li>· 비회원은 커뮤니티 글·댓글·신고만 쓸 수 있고, 이름은 ‘새벽 기타리스트’처럼 자동으로 붙어요.</li>
+                <li>· 도배는 DB 가 막아요: 글 30초·댓글 10초 간격, 시간당 한도, 전체 비회원 폭주 차단.</li>
+                <li>· 문제 글은 신고 목록에서 ‘대상 숨기기’로 바로 내려요. 작성자가 지운 글은 숨김 상태로 남아 관리자만 볼 수 있어요.</li>
+                <li>· 비회원 글은 검색엔진에 노출하지 않아요(noindex).</li>
+              </ul>
+            </div>
+            <div className="card p-4 sm:p-5">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-2">
+                <ImageIcon aria-hidden className="size-4" />
+                장터 사진 (market 버킷)
+              </h2>
+              {(() => {
+                const b = storage.find((x) => x.id === "market");
+                return (
+                  <p className="mt-3 flex items-center gap-2 text-sm">
+                    <StatusDot ok={b?.ok ?? null} />
+                    <span className="font-semibold text-ink">{b?.ok ? "사용 가능" : b?.ok === false ? "버킷 없음·접근 불가" : "확인 불가"}</span>
+                    <span className="font-display text-xs text-ink-3">{b?.files === null || b?.files === undefined ? "" : `폴더 ${b.files >= 100 ? "100+" : b.files}개`}</span>
+                  </p>
+                );
+              })()}
+              <ul className="mt-3 space-y-1.5 text-xs leading-relaxed text-ink-2">
+                <li>· 회원만 올릴 수 있어요. 경로는 market/회원uid/파일 — 본인 폴더에만 올라가요.</li>
+                <li>· JPG·PNG·WEBP·GIF, 한 장 10MB, 글 하나에 6장까지.</li>
+                <li>· 글 저장이 실패하면 올라간 사진이 남을 수 있어요. 스토리지 관리 화면(준비 중)에서 정리할 예정이에요.</li>
+              </ul>
             </div>
           </section>
 

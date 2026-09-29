@@ -32,7 +32,7 @@ export function PostRow({ post: p, showCategory = false }: { post: Post; showCat
         </div>
         <h3 className="mt-1 line-clamp-1 text-[15px] font-semibold text-ink group-hover:text-coral-deep">{p.title}</h3>
         <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-3">
-          <AuthorLabel author={p.author} display={p.authorDisplay} anonymous={p.isAnonymous} />
+          <AuthorLabel author={p.author} display={p.authorDisplay} anonymous={p.isAnonymous} guestName={p.guestName} />
           <span>{formatRelative(p.createdAt)}</span>
           <span className="font-display inline-flex items-center gap-1">
             <Eye aria-hidden className="size-3" />

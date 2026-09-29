@@ -43,6 +43,12 @@
      - DROP이 없고 여러 번 실행해도 안전하다.
      - 새로 만드는 프로젝트라면 schema.sql 10번 섹션에 같은 내용이 들어 있어서 건너뛰어도 된다. 다시 실행해도 문제는 없다.
      - 이 파일을 실행하지 않으면 해당 항목이 들어간 글을 저장할 때 "DB에 새 입력 항목이 아직 없어요" 오류가 난다.
+   - 그다음 `omu/supabase/migrations/20260930_guest_community.sql`을 실행한다.
+     - 비회원 글·댓글·신고 RPC, 삭제(숨김) 컬럼, 도배 제한 기록 테이블을 추가한다.
+     - DROP이 없고 여러 번 실행해도 안전하다. 기존 조회 정책 4개는 `ALTER POLICY`로 "숨김 처리된 글 제외" 조건만 바뀐다.
+     - `posts`·`comments`의 `author_id NOT NULL` 제약은 원래 없으므로 건드리지 않는다.
+     - 새 프로젝트라면 schema.sql 11번 섹션에 같은 내용이 있다.
+     - 적용 전에는 비회원 쓰기·댓글·신고에서 "DB 업데이트가 필요해요" 안내가 나온다(목록·상세는 정상).
 2. **API 값 확보**
    - Project Settings → API에서 아래 두 값을 복사해 둔다.
      - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
@@ -146,6 +152,9 @@
 **Supabase**
 - [ ] `schema.sql` 적용 완료. RLS 정책 42개(public 35 + storage 7)가 있다.
 - [ ] `migrations/20260929_write_fields.sql` 적용 완료. `posts.tags`, `recruits.deadline`, `market_items.item_condition` 컬럼이 있다.
+- [ ] `migrations/20260930_guest_community.sql` 적용 완료.
+  - `select proname from pg_proc where proname like 'omu\_%';` 결과에 `omu_guest_create_post`, `omu_create_comment`, `omu_report`가 있다.
+- [ ] Storage에 `market` 버킷이 있다(schema.sql 8번). 장터 사진이 여기에 올라간다.
 - [ ] Site URL과 Redirect URLs에 운영, Vercel, localhost 주소가 모두 있다.
 - [ ] Kakao Provider가 켜져 있다(REST API 키와 Client Secret 입력).
 - [ ] Email Confirm이 켜져 있다.
@@ -186,6 +195,11 @@
 - [ ] 에디터로 악보 PDF를 등록할 수 있다.
   - 정보글은 초안으로만 저장된다.
   - 관리자가 발행해야 공개된다.
+- [ ] 로그아웃 상태에서 `/write/community`에 "로그인 없이 바로 쓸 수 있어요"가 나온다.
+  - 글을 쓰면 ‘새벽 기타리스트’ 같은 이름으로 저장되고, 같은 브라우저에서만 수정·삭제 버튼이 보인다.
+- [ ] 로그아웃 상태에서 댓글을 달면 같은 글 안에서는 같은 이름으로 보인다.
+- [ ] 신고하기 → `/admin/reports`에 나온다. ‘대상 숨기기’를 누르면 글·댓글이 사라진다.
+- [ ] 회원으로 장터 글에 사진을 올리면 상세 페이지에 사진이 나온다(Storage `market/<uid>/`).
 - [ ] 운영 화면에 "데모 작성 모드" 표시가 **없다**.
   - 표시가 있다면 Supabase 환경변수가 빠졌거나 `OMU_DATA_SOURCE=demo`가 설정된 것이다.
 
@@ -209,6 +223,9 @@
 | 로그인은 되는데 관리자가 아님 | `profiles.role` 확인. 최초 관리자는 이메일 인증된 계정만 자동 승격 |
 | 환경변수를 바꿨는데 그대로 | `NEXT_PUBLIC_*`는 빌드 시 고정 → Redeploy |
 | 관리자 대시보드 숫자가 "—" | `schema.sql` 미적용 또는 관리자 권한 아님 |
+| 비회원 글·댓글·신고 시 "DB 업데이트가 필요해요" | `migrations/20260930_guest_community.sql` 미적용 |
+| 비회원 글이 "지금은 비회원 작성이 많아 잠시 막혀 있어요" | 전체 비회원 글 10분 100건 한도. 도배 공격이면 정상 동작. 한도는 `omu_guest_create_post` 의 `omu_throttle` 인자 |
+| 장터 사진 업로드 실패 | `market` 버킷·Storage 정책(schema.sql 8번), 파일 형식·10MB |
 | 글 저장 시 "DB에 새 입력 항목이 아직 없어요" | `migrations/20260929_write_fields.sql` 미적용 |
 | 글 저장 시 "이 글을 쓸 권한이 없어요" | 로그인 세션 만료, 또는 `profiles.role`이 해당 글 종류에 맞지 않음(RLS) |
 | 운영에 "데모 작성 모드"가 보임 | Supabase 환경변수 누락 또는 `OMU_DATA_SOURCE=demo` → 수정 후 Redeploy |

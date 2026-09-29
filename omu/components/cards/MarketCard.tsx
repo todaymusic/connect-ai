@@ -39,7 +39,12 @@ export function MarketCard({ item: m, headingLevel = "h3" }: { item: MarketItem;
   return (
     <Link href={`/gear/market/${m.id}`} className="card group flex h-full flex-col overflow-hidden">
       <div className="relative flex aspect-square items-center justify-center bg-stone">
-        <Icon aria-hidden className={`size-12 text-ink/20 transition-transform group-hover:scale-105 ${done ? "opacity-50" : ""}`} strokeWidth={1.4} />
+        {m.imageUrls[0] ? (
+          // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage 공개 주소
+          <img src={m.imageUrls[0]} alt="" loading="lazy" className={`absolute inset-0 size-full object-cover ${done ? "opacity-50" : ""}`} />
+        ) : (
+          <Icon aria-hidden className={`size-12 text-ink/20 transition-transform group-hover:scale-105 ${done ? "opacity-50" : ""}`} strokeWidth={1.4} />
+        )}
         <span className="absolute left-2.5 top-2.5">
           <MarketStatusBadge item={m} />
         </span>

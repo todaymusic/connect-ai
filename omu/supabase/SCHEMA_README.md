@@ -119,6 +119,17 @@ schema.sql을 이미 실행한 프로젝트에는 아래 파일을 순서대로 
 | 파일 | 내용 |
 |---|---|
 | `migrations/20260929_write_fields.sql` | `posts.tags` (최대 5), `recruits.positions` (최대 5)<br>`recruits.deadline`, `market_items.item_condition`<br>`posts.tags` 읽기 권한(GRANT) |
+| `migrations/20260930_guest_community.sql` | 비회원 글·댓글·신고 RPC(`omu_guest_create_post`, `omu_create_comment`, `omu_report`)<br>수정·삭제 RPC(`omu_edit_post`, `omu_edit_comment`, `omu_soft_delete`), `omu_my_items`<br>`guest_name`·`guest_key`·`edited_at`·`deleted_at` 컬럼, `reports.reporter_key`·대상 스냅샷<br>도배 제한 `omu_guest_events`(외부 접근 불가), `omu_guard_row` 보호 컬럼 추가, 조회 정책 4개 `ALTER POLICY` |
+
+### 20260930 실행 전 확인할 것
+- **비회원 쓰기의 경계:** anon 역할에 테이블 쓰기 권한은 여전히 없다. 비회원은 위 RPC 로만 쓴다. RPC 는 제목·본문 길이, 게시판, 비밀값 형식, 도배 제한을 DB 에서 다시 검사한다.
+- **도배 제한 한도:**
+  - 비회원 글: 30초 간격, 시간당 10건, 같은 접속지 20건, 전체 10분 100건
+  - 댓글: 10초, 30건, 60건, 300건
+  - 한도는 각 RPC 안의 `omu_throttle(...)` 인자로 바꾼다.
+  - 앱 서버가 넘기는 접속지 값은 IP 의 해시이고, 2일 뒤 지운다. RPC 를 직접 호출하면 접속지 값을 바꿀 수 있어서, 전체 한도가 최종 안전장치다.
+- **삭제 정책:** 삭제는 `deleted_at` 을 채우는 숨김이다. 숨긴 행은 관리자만 조회한다(조회 정책 변경). 실제 삭제가 필요하면 관리자가 SQL 로 지운다.
+- **표시 이름 목록:** `omu_guest_names()` 와 `lib/guest/names.ts` 는 같은 목록이어야 한다(바꿀 때 둘 다).
 
 - 새 프로젝트라면 schema.sql 10번 섹션에 같은 내용이 들어 있다.
 - posts는 컬럼 단위로 읽기 권한을 준다. 그래서 posts에 새 컬럼을 추가할 때는 `grant select (컬럼) on public.posts to anon, authenticated`도 함께 실행해야 목록에 보인다.

@@ -8,6 +8,7 @@ import { MarketForm } from "@/components/write/forms/MarketForm";
 import { RecruitForm } from "@/components/write/forms/RecruitForm";
 import { ScoreForm } from "@/components/write/forms/ScoreForm";
 import { ScoreRequestForm } from "@/components/write/forms/ScoreRequestForm";
+import { GuestNotice } from "@/components/interact/GuestNotice";
 import { DemoRoleSwitcher, WriteGate } from "@/components/write/WriteChrome";
 import { first } from "@/lib/url";
 import { canWrite, denyReason, getWriteType } from "@/lib/write/config";
@@ -46,11 +47,17 @@ export default async function WriteTypePage({ params, searchParams }: PageProps<
         </div>
       )}
 
+      {allowed && !role && (
+        <div className="mt-6">
+          <GuestNotice loginHref={`/login?next=${encodeURIComponent(here)}`} demo={state.mode === "demo"} />
+        </div>
+      )}
+
       <div className="mt-6">
         {!allowed ? (
           <WriteGate kind={role ? "forbidden" : "signed-out"} message={denyReason(role, cfg.key) ?? ""} next={here} demo={state.mode === "demo"} />
         ) : cfg.key === "community" ? (
-          <CommunityForm mode={state.mode} defaults={{ category: first(sp.category), subject: first(sp.subject) }} />
+          <CommunityForm mode={state.mode} guest={!role} defaults={{ category: first(sp.category), subject: first(sp.subject) }} />
         ) : cfg.key === "market" ? (
           <MarketForm mode={state.mode} defaults={{ trade: first(sp.trade), category: first(sp.category) }} />
         ) : cfg.key === "recruit" ? (

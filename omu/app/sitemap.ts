@@ -73,6 +73,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // 거래 완료·모집 마감·익명 글은 noindex 라 제외
     ...market.filter((m) => m.status !== "sold").map((m) => ({ url: `${base}/gear/market/${m.id}`, lastModified: new Date(m.createdAt), changeFrequency: "weekly" as const, priority: 0.5 })),
     ...recruits.filter((r) => !r.isClosed).map((r) => ({ url: `${base}/recruit/${r.category}/${r.id}`, lastModified: new Date(r.createdAt), changeFrequency: "weekly" as const, priority: 0.5 })),
-    ...posts.filter((p) => !p.isAnonymous).map((p) => ({ url: `${base}/community/${p.category}/${p.id}`, lastModified: new Date(p.createdAt), changeFrequency: "weekly" as const, priority: 0.4 })),
+    ...posts.filter((p) => !p.isAnonymous && !p.guestName).map((p) => ({ url: `${base}/community/${p.category}/${p.id}`, lastModified: new Date(p.createdAt), changeFrequency: "weekly" as const, priority: 0.4 })),
   ];
 }
