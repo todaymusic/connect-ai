@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { getAuthState, type CurrentUser } from "./auth";
 import { getSocialProviders } from "./auth-providers";
+import { scoreThumbnailUrl } from "./data/storage";
 import { getSupabaseServerClient } from "./supabase/server";
 import { DEMO_ROLE_COOKIE } from "./write/config";
 
@@ -250,3 +251,88 @@ export async function listReports(access: AdminAccess, status: ReportStatus | "a
 
 // 미리보기에는 예시 신고를 두지 않는다(이 브라우저에서 데모로 보낸 신고만 따로 보인다)
 const MOCK_REPORTS: AdminReport[] = [];
+
+/* ───────── 악보·정보글 관리 목록 ───────── */
+
+export type AdminScoreRow = {
+  id: string;
+  title: string;
+  slug: string;
+  instrument: string;
+  difficulty: string | null;
+  createdAt: string;
+  downloads: number;
+  views: number;
+  /** 첫 페이지 미리보기 공개 주소 (없으면 null) */
+  thumbnailUrl: string | null;
+};
+export type AdminArticleRow = {
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  isPublished: boolean;
+  createdAt: string;
+  publishedAt: string | null;
+};
+export type AdminContent = { scores: AdminScoreRow[]; articles: AdminArticleRow[]; error: string | null };
+
+/** 관리 화면에 보여 줄 최근 항목 수 */
+export const ADMIN_CONTENT_LIMIT = 30;
+
+/**
+ * 최근 등록한 악보·정보글 — 관리자 세션으로 조회(RLS 상 관리자는 초안도 보인다).
+ * 미리보기(Supabase 미연결)에서는 지어낸 항목 없이 빈 목록.
+ */
+export async function listAdminContent(access: AdminAccess): Promise<AdminContent> {
+  if (access.kind !== "admin") return { scores: [], articles: [], error: null };
+  const supabase = await getSupabaseServerClient();
+  if (!supabase) return { scores: [], articles: [], error: "Supabase 에 연결하지 못했어요." };
+  const [s, a] = await Promise.all([
+    supabase
+      .from("scores")
+      .select("id, title, slug, instrument, difficulty, created_at, download_count, view_count, thumbnail_url")
+      .order("created_at", { ascending: false })
+      .limit(ADMIN_CONTENT_LIMIT),
+    supabase
+      .from("articles")
+      .select("id, title, slug, category, is_published, created_at, published_at")
+      .order("created_at", { ascending: false })
+      .limit(ADMIN_CONTENT_LIMIT),
+  ]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const scores = ((s.data ?? []) as any[]).map(
+    (r): AdminScoreRow => ({
+      id: r.id,
+      title: r.title,
+      slug: r.slug,
+      instrument: r.instrument,
+      difficulty: r.difficulty ?? null,
+      createdAt: r.created_at,
+      downloads: r.download_count ?? 0,
+      views: r.view_count ?? 0,
+      thumbnailUrl: scoreThumbnailUrl(r.thumbnail_url),
+    }),
+  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const articles = ((a.data ?? []) as any[]).map(
+    (r): AdminArticleRow => ({
+      id: r.id,
+      title: r.title,
+      slug: r.slug,
+      category: r.category,
+      isPublished: Boolean(r.is_published),
+      createdAt: r.created_at,
+      publishedAt: r.published_at ?? null,
+    }),
+  );
+  const error = s.error || a.error ? "일부 목록을 불러오지 못했어요. schema.sql 적용 여부와 관리자 권한을 확인해 주세요." : null;
+  return { scores, articles, error };
+}
+
+/** 관리자 메뉴의 미처리 신고 배지용 */
+export async function countOpenReports(access: AdminAccess): Promise<number | null> {
+  if (access.kind !== "admin") return null;
+  const supabase = await getSupabaseServerClient();
+  return supabase ? countRows(supabase, "reports", ["status", "open"]) : null;
+}

@@ -1,4 +1,5 @@
 import {
+  ArrowRight,
   BookOpen,
   CheckCircle2,
   CircleAlert,
@@ -62,11 +63,13 @@ function StatusDot({ ok }: { ok: boolean | null }) {
   return <CircleDashed aria-label="확인 불가" className="size-4 text-ink-3" />;
 }
 
-const UPCOMING: { icon: LucideIcon; title: string; body: string }[] = [
+/** 관리 기능 안내 — href 가 있으면 열린 기능(링크), 없으면 '준비 중' */
+const UPCOMING: { icon: LucideIcon; title: string; body: string; href?: string }[] = [
   {
     icon: FileMusic,
     title: "악보·정보글 등록",
-    body: "PDF 업로드, 정보글 작성·발행, 작성자(OMU 에디터/회원) 지정, CSV 일괄 등록.",
+    body: "악보 PDF 올리기·정보글 쓰기, 최근 등록한 악보·정보글 확인과 삭제.",
+    href: "/admin/content",
   },
   {
     icon: UserCog,
@@ -249,21 +252,41 @@ export function AdminDashboard({ summary, adminName }: { summary: AdminSummary; 
           {/* 예정 기능 */}
           <section aria-labelledby="upcoming-title">
             <h2 id="upcoming-title" className="text-lg font-extrabold text-ink">
-              곧 추가될 관리 기능
+              관리 기능
             </h2>
             <ul className="mt-3 grid gap-2.5 sm:grid-cols-2">
-              {UPCOMING.map((u) => (
-                <li key={u.title} className="card p-4 sm:p-5">
-                  <p className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-2 text-[15px] font-bold text-ink">
-                      <u.icon aria-hidden className="size-4 text-ink-2" />
-                      {u.title}
-                    </span>
-                    <span className="rounded-full bg-stone px-2 py-0.5 text-[11px] font-bold text-ink-3">준비 중</span>
-                  </p>
-                  <p className="mt-2 text-sm leading-relaxed text-ink-2">{u.body}</p>
-                </li>
-              ))}
+              {UPCOMING.map((u) => {
+                const inner = (
+                  <>
+                    <p className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2 text-[15px] font-bold text-ink">
+                        <u.icon aria-hidden className="size-4 text-ink-2" />
+                        {u.title}
+                      </span>
+                      {u.href ? (
+                        <span className="inline-flex items-center gap-0.5 rounded-full bg-ink px-2 py-0.5 text-[11px] font-bold text-paper">
+                          열기
+                          <ArrowRight aria-hidden className="size-3" />
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-stone px-2 py-0.5 text-[11px] font-bold text-ink-3">준비 중</span>
+                      )}
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-ink-2">{u.body}</p>
+                  </>
+                );
+                return (
+                  <li key={u.title}>
+                    {u.href ? (
+                      <Link href={u.href} className="card block h-full p-4 transition-colors hover:border-ink-3 sm:p-5">
+                        {inner}
+                      </Link>
+                    ) : (
+                      <div className="card h-full p-4 sm:p-5">{inner}</div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </section>
         </div>

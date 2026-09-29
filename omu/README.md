@@ -92,6 +92,8 @@ DEPLOYMENT.md        Vercel 배포 순서와 체크리스트 (Root Directory = o
 | 스팸 방지 | 숨은 입력칸(honeypot), 폼 연 뒤 2초 이내 제출 거절, 최소 길이(제목 2·본문 5·댓글 2자), 연속 작성 제한(브라우저 → 서버 메모리 → **DB 최종**: 글 30초·댓글 10초 간격, 시간당 한도, 같은 접속지 한도, 전체 비회원 폭주 차단) | `lib/guard/server.ts`, DB `omu_throttle` |
 | 장터 사진 | JPG·PNG·WEBP·GIF, 장당 10MB, 6장. Supabase: 브라우저가 `market/<본인 uid>/` 에 올리고 주소만 저장 / 데모: 미리보기만(작은 썸네일을 이 브라우저에 보관) | `components/write/ImagePicker.tsx` |
 | 관리자 | `/admin/reports` 신고 목록(미처리·처리 완료·기각), 처리·기각·대상 숨기기. 대시보드에 비회원 글·댓글 수, market 버킷 상태 | `lib/admin*.ts`, `components/admin/*` |
+| 악보·정보글 관리 | `/admin/content` 악보 올리기·정보글 쓰기 바로가기, 최근 30개 목록(초안 포함), 삭제(확인창 → DB 행 삭제 후 연결된 PDF·미리보기 파일도 Storage 에서 삭제. RLS `*_delete_staff_own_or_admin`, `omu_storage_staff_delete`) | `app/admin/content`, `lib/admin-actions.ts` `deleteContent` |
+| 에디터용 버튼 | `/score`·`/score/<악기>` 의 ‘악보 올리기’, `/info`·`/gear/<분류>` 의 ‘정보글 쓰기’는 에디터·관리자에게만 보인다. ISR 페이지를 그대로 두려고 브라우저에서 역할을 확인해 그린다(데모 모드는 데모 역할 쿠키) | `components/auth/StaffWriteLink.tsx`, `useViewerRole.ts` |
 
 - **Supabase 모드:** 비회원은 테이블에 직접 쓸 수 없고(anon 권한 없음), 검증된 `SECURITY DEFINER` RPC 로만 쓴다. `service_role` 키는 쓰지 않는다.
 - **데모 모드:** 같은 검증·제한을 서버 액션이 거친 뒤, 결과를 이 브라우저 localStorage 에 보관한다(`omu-demo-comments`, `omu-demo-reports`, `omu-demo-hidden`). 데모에서 ‘관리자’ 역할을 고르면 `/admin` 을 예시 데이터로 미리 볼 수 있다.

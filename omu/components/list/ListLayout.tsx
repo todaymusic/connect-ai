@@ -10,12 +10,15 @@ export function ListHeader({
   description,
   writeHref,
   writeLabel = "글쓰기",
+  actions,
 }: {
   eyebrow?: string;
   title: string;
   description?: string;
   writeHref?: string;
   writeLabel?: string;
+  /** 글쓰기 버튼 옆에 둘 것 (예: 에디터·관리자에게만 보이는 버튼 — 클라이언트에서 그린다) */
+  actions?: ReactNode;
 }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-3">
@@ -26,14 +29,19 @@ export function ListHeader({
         <h1 className="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{title}</h1>
         {description && <p className="mt-1.5 text-sm leading-relaxed text-ink-2">{description}</p>}
       </div>
-      {writeHref && (
-        <Link
-          href={writeHref}
-          className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-coral px-4 text-sm font-bold text-white transition-colors hover:bg-coral-deep"
-        >
-          <PenLine aria-hidden className="size-4" />
-          {writeLabel}
-        </Link>
+      {(writeHref || actions) && (
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {actions}
+          {writeHref && (
+            <Link
+              href={writeHref}
+              className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-coral px-4 text-sm font-bold text-white transition-colors hover:bg-coral-deep"
+            >
+              <PenLine aria-hidden className="size-4" />
+              {writeLabel}
+            </Link>
+          )}
+        </div>
       )}
     </div>
   );

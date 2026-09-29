@@ -5,12 +5,12 @@ import { FileMusic, Flag, FolderOpen, LayoutDashboard, UserCog, type LucideIcon 
 const ADMIN_NAV: { key: string; label: string; icon: LucideIcon; href: string | null }[] = [
   { key: "dashboard", label: "대시보드", icon: LayoutDashboard, href: "/admin" },
   { key: "reports", label: "신고 처리", icon: Flag, href: "/admin/reports" },
-  { key: "content", label: "악보·정보글 등록", icon: FileMusic, href: null },
+  { key: "content", label: "악보·정보글 등록", icon: FileMusic, href: "/admin/content" },
   { key: "roles", label: "회원 역할 변경", icon: UserCog, href: null },
   { key: "storage", label: "스토리지 관리", icon: FolderOpen, href: null },
 ];
 
-export function AdminNav({ active, openReports }: { active: "dashboard" | "reports"; openReports?: number | null }) {
+export function AdminNav({ active, openReports }: { active: "dashboard" | "reports" | "content"; openReports?: number | null }) {
   return (
     <nav aria-label="관리자 메뉴" className="min-w-0">
       <ul className="scrollbar-none -mx-4 flex gap-1.5 overflow-x-auto px-4 lg:mx-0 lg:flex-col lg:px-0">

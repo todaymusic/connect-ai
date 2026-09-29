@@ -5,6 +5,7 @@ import { CategoryTabs, ChipFilter, ComingSoonState, EmptyState, FilterForm, List
 import { listScores } from "@/lib/data/scores";
 import { DIFFICULTIES, SCORE_GENRES, SCORE_INSTRUMENTS, type ScoreInstrument } from "@/lib/site";
 import { first, pageParam, pick, type Query, type SearchParams } from "@/lib/url";
+import { StaffWriteLink } from "@/components/auth/StaffWriteLink";
 
 const SORTS = { latest: "최신순", popular: "인기순" } as const;
 
@@ -34,6 +35,7 @@ export async function ScoreList({ instrument, searchParams }: { instrument?: Sco
         }
         writeHref="/write/score-request"
         writeLabel="악보 요청"
+        actions={<StaffWriteLink type="score" href="/write/score" label="악보 올리기" tone="secondary" icon="upload" />}
       />
       <CategoryTabs
         label="과목"

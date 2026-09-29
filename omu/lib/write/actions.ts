@@ -388,7 +388,9 @@ export async function setDemoRole(fd: FormData): Promise<void> {
   const role = String(fd.get("role") ?? "");
   const store = await cookies();
   if (role in DEMO_ROLES && role !== "signed_out") {
-    store.set(DEMO_ROLE_COOKIE, role, { path: "/", sameSite: "lax", httpOnly: true, maxAge: 60 * 60 * 24 * 7 });
+    // 브라우저에서도 읽는다(공개 페이지의 에디터용 버튼 표시 — components/auth/useViewerRole).
+    // 권한이 아니라 데모 화면 확인용 값이고 Supabase 모드에서는 쓰이지 않으므로 httpOnly 가 아니어도 된다.
+    store.set(DEMO_ROLE_COOKIE, role, { path: "/", sameSite: "lax", httpOnly: false, maxAge: 60 * 60 * 24 * 7 });
   } else {
     store.delete(DEMO_ROLE_COOKIE);
   }
