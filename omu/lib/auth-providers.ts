@@ -41,6 +41,15 @@ export function getSocialProviders(): SocialProviderConfig[] {
   ];
 }
 
+/**
+ * 이메일 로그인 링크(비밀번호 없음) — 카카오 키가 없어도 관리자가 들어올 수 있게 둔다.
+ * 기본 켜짐. 소셜 로그인만 쓰고 싶으면 NEXT_PUBLIC_AUTH_EMAIL_ENABLED=false (Redeploy 필요).
+ * Supabase 환경변수가 없는 데모 모드에서는 화면에 나오지 않는다.
+ */
+export function isEmailLoginEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_AUTH_EMAIL_ENABLED !== "false";
+}
+
 /** Supabase 커스텀 Provider 식별자 규칙: custom: 접두사 + 소문자·숫자·하이픈·콜론, 전체 2~50자 */
 export function isCustomProviderId(value: string): value is `custom:${string}` {
   return /^custom:[a-z0-9:-]+$/.test(value) && value.length <= 50;
@@ -52,11 +61,13 @@ export function safeNextPath(next: string | null | undefined, fallback = "/"): s
   return next;
 }
 
-/** OAuth 콜백 오류 코드 → 사용자 안내 문구 */
+/** 로그인 콜백 오류 코드 → 사용자 안내 문구 */
 export const AUTH_ERROR_MESSAGES: Record<string, string> = {
   access_denied: "로그인을 취소했어요. 다시 시도해 주세요.",
   missing_code: "로그인 정보를 받지 못했어요. 다시 시도해 주세요.",
   exchange_failed: "로그인 처리 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.",
   unconfigured: "아직 로그인 서버가 연결되지 않았어요.",
   provider_disabled: "이 로그인 방식은 아직 준비 중이에요.",
+  link_expired: "로그인 링크가 만료됐거나 이미 사용됐어요. 이메일로 링크를 다시 받아 주세요.",
+  other_browser: "로그인 링크는 요청한 브라우저에서 열어야 해요. 이 브라우저에서 이메일을 다시 입력해 링크를 받아 주세요.",
 };

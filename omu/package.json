@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:setup-sql": "node scripts/build-setup-sql.mjs"
   },
   "dependencies": {
     "@fontsource/space-grotesk": "^5.3.0",

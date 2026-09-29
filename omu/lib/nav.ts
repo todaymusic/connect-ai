@@ -21,7 +21,7 @@ const [score, info, gear, recruit, community] = MAIN_MENU;
 export const NAV_SECTIONS: NavSection[] = [
   {
     ...score,
-    description: "무료 악보는 준비 중 · 찾는 곡은 악보 요청으로",
+    description: "과목별 무료 악보와 악보 요청",
     children: [
       ...Object.entries(SCORE_INSTRUMENTS).map(([key, label]) => ({ href: `/score/${key}`, label })),
       { href: "/score/requests", label: "악보 요청" },
@@ -34,7 +34,7 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     ...gear,
-    description: "장비·악기 정보 읽기 · 중고 장터는 준비 중",
+    description: "장비·악기 고르는 법과 중고 장터",
     children: [
       { href: "/gear/market", label: "중고 장터" },
       ...Object.entries(GEAR_ARTICLE_CATEGORIES).map(([key, label]) => ({ href: `/gear/${key}`, label })),
@@ -42,7 +42,7 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     ...recruit,
-    description: "밴드 멤버·세션·강사·오디션 공고 · 준비 중",
+    description: "밴드 멤버·세션·강사·오디션 공고",
     children: Object.entries(RECRUIT_CATEGORIES).map(([key, label]) => ({ href: `/recruit/${key}`, label })),
   },
   {

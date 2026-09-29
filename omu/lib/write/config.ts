@@ -21,11 +21,33 @@ export type WriteTypeConfig = {
   closed?: string;
 };
 
+/**
+ * 열고 닫을 수 있는 게시판(기본: 닫힘) — 코드 수정 없이 환경변수로 연다.
+ *   NEXT_PUBLIC_OMU_OPEN_WRITE=market,recruit   (쉼표로 구분, 대소문자 무시)
+ * NEXT_PUBLIC_ 값은 빌드할 때 들어가므로, Vercel 에서 바꾼 뒤에는 Redeploy 해야 반영된다.
+ * 화면(허브·폼·헤더 메뉴)과 서버 액션이 모두 이 설정 하나를 쓴다.
+ */
+const GATED: Partial<Record<WriteType, string>> = {
+  market: "중고 장터는 준비 중이에요. 안전한 거래 기능을 갖춘 뒤 열 예정이에요.",
+  recruit: "구인·모집은 준비 중이에요. 곧 밴드·세션 모집글을 올릴 수 있게 열 예정이에요.",
+};
+
+export function openedWriteTypes(raw: string | undefined = process.env.NEXT_PUBLIC_OMU_OPEN_WRITE): Set<string> {
+  return new Set(
+    (raw ?? "")
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
+const OPENED = openedWriteTypes();
+const gate = (key: WriteType) => (GATED[key] && !OPENED.has(key) ? GATED[key] : undefined);
+
 export const WRITE_TYPES: WriteTypeConfig[] = [
   { key: "score", label: "악보 올리기", section: "악보공유", hint: "무료 악보 PDF 등록 · 에디터 전용", minRole: "editor" },
   { key: "article", label: "정보글 쓰기", section: "음악정보", hint: "입문·입시·공모전·장비 정보 · 에디터 전용", minRole: "editor" },
-  { key: "market", label: "중고 판매글", section: "악기", hint: "판매 · 구매 · 나눔", minRole: "user", closed: "중고 장터는 준비 중이에요. 안전한 거래 기능을 갖춘 뒤 열 예정이에요." },
-  { key: "recruit", label: "모집글", section: "구인·모집", hint: "밴드 · 세션 · 레슨 · 오디션", minRole: "user", closed: "구인·모집은 준비 중이에요. 곧 밴드·세션 모집글을 올릴 수 있게 열 예정이에요." },
+  { key: "market", label: "중고 판매글", section: "악기", hint: "판매 · 구매 · 나눔", minRole: "user", closed: gate("market") },
+  { key: "recruit", label: "모집글", section: "구인·모집", hint: "밴드 · 세션 · 레슨 · 오디션", minRole: "user", closed: gate("recruit") },
   { key: "community", label: "커뮤니티 글", section: "커뮤니티", hint: "자유 · 익명 · Q&A · 연주 자랑 · 창업 고민", minRole: "user", guestAllowed: true },
   { key: "score-request", label: "악보 요청", section: "악보공유", hint: "“이 곡 악보 있나요?”", minRole: "user" },
 ];

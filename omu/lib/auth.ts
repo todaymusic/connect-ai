@@ -53,7 +53,8 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
       id: user.id,
       email: user.email ?? null,
       // 가입 트리거가 아직 프로필을 만들지 않았으면(스키마 미적용 등) 메타데이터로 대체
-      nickname: profile?.nickname ?? meta.nickname ?? meta.name ?? meta.full_name ?? "회원",
+      // (이메일 로그인 계정은 메타데이터가 비어 있으므로 가입 트리거와 같은 규칙으로 이메일 앞부분을 쓴다)
+      nickname: profile?.nickname ?? meta.nickname ?? meta.name ?? meta.full_name ?? (user.email?.split("@")[0] || "회원"),
       role: (profile?.role as Role | undefined) ?? "user",
       avatarUrl: profile?.avatar_url ?? meta.avatar_url ?? meta.picture ?? null,
       provider: (user.app_metadata?.provider as string | undefined) ?? null,

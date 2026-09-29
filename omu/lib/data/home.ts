@@ -42,6 +42,6 @@ export async function getHomeData() {
       openBands: openBand.total,
     },
     /** 전체 건수 — 0이면 홈에서 '준비 중'으로 보여 준다 */
-    totals: { scores: scores.total, market: market.total, recruits: anyRecruit.total, posts: popular.total },
+    totals: { scores: scores.total, articles: articles.total, market: market.total, recruits: anyRecruit.total, posts: popular.total },
   };
 }

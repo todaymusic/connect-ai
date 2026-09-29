@@ -19,8 +19,7 @@ export default function AboutPage() {
         필요한 악기를 구하고, 같이 연주할 사람까지 찾을 수 있는 곳을 만들고 있어요.
       </p>
       <p className="mt-3 text-[15px] leading-relaxed text-ink-2">
-        지금은 <strong className="text-ink">음악정보</strong>와 <strong className="text-ink">커뮤니티</strong>를 먼저 열었어요. 무료 악보·중고 장터·구인·모집은 준비가 끝나는 대로
-        차례로 열 예정이에요.
+        지금은 <strong className="text-ink">음악정보</strong>와 <strong className="text-ink">커뮤니티</strong>를 중심으로 운영하고 있고, 다른 코너도 차례로 채워 가고 있어요.
       </p>
       <ul className="mt-8 grid gap-3 sm:grid-cols-2">
         {NAV_SECTIONS.map((s) => (

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { MarketCard } from "@/components/cards/MarketCard";
 import { CategoryTabs, ChipFilter, ComingSoonState, EmptyState, FilterForm, ListHeader, ListShell, Pagination, ResultCount } from "@/components/list/ListLayout";
+import { Guitar } from "lucide-react";
 import { closedReason } from "@/lib/write/config";
 import { listMarketItems } from "@/lib/data/market";
 import { ARTICLE_CATEGORIES, GEAR_ARTICLE_CATEGORIES, MARKET_CATEGORIES, MARKET_STATUS, REGIONS, TRADE_TYPES, type GearArticleCategory } from "@/lib/site";
@@ -47,9 +48,15 @@ export default async function MarketListPage({ searchParams }: PageProps<"/gear/
       />
       {empty ? (
         <div className="mt-6">
-          <ComingSoonState title="중고 장터는 준비 중이에요" action={{ href: "/gear", label: "장비·악기 정보 보기" }}>
-            {closed ? "안전한 거래 기능을 갖춘 뒤 열 예정이에요." : "아직 올라온 매물이 없어요."} 그전까지는 장비·악기 정보글을 참고해 보세요.
-          </ComingSoonState>
+          {closed ? (
+            <ComingSoonState title="중고 장터는 준비 중이에요" action={{ href: "/gear", label: "장비·악기 정보 보기" }}>
+              안전한 거래 기능을 갖춘 뒤 열 예정이에요. 그전까지는 장비·악기 정보글을 참고해 보세요.
+            </ComingSoonState>
+          ) : (
+            <ComingSoonState title="아직 올라온 매물이 없어요" icon={Guitar} action={{ href: "/write/market", label: "첫 매물 올리기" }}>
+              판매·구매·나눔 글을 올릴 수 있어요.
+            </ComingSoonState>
+          )}
         </div>
       ) : (
       <>

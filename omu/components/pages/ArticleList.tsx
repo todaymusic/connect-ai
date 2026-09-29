@@ -18,7 +18,7 @@ const SECTION = {
     base: "/gear",
     title: "악기·장비 정보",
     eyebrow: "Gear Guide",
-    description: "이펙터·오디오인터페이스·마이크부터 브랜드별 악기 특징까지.",
+    description: "오디오 인터페이스·마이크·악기를 고를 때 따져볼 기준을 모았어요.",
     cats: GEAR_ARTICLE_CATEGORIES as Record<string, string>,
   },
 } as const;
@@ -66,7 +66,11 @@ export async function ArticleList({
       </div>
       {result.items.length === 0 ? (
         <div className="mt-4">
-          <EmptyState title="아직 올라온 글이 없어요">에디터가 준비 중이에요. 다른 분류도 둘러보세요.</EmptyState>
+          {q ? (
+            <EmptyState title="검색 결과가 없어요">다른 검색어로 찾아보거나 다른 분류도 둘러보세요.</EmptyState>
+          ) : (
+            <EmptyState title="아직 올라온 글이 없어요">다른 분류도 둘러보세요.</EmptyState>
+          )}
         </div>
       ) : (
         <ul className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
