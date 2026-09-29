@@ -73,6 +73,8 @@ DEPLOYMENT.md        Vercel 배포 순서와 체크리스트 (Root Directory = o
 - 비로그인: 로그인 안내 (로그인 후 원래 폼으로 돌아옴). 권한 부족: 이유를 설명한다.
 - 검증 규칙은 `lib/write/validate.ts` 하나를 클라이언트·서버가 같이 쓴다.
 - **Supabase 모드:** 서버 액션이 로그인 세션으로 해당 테이블에 insert → 상세 페이지로 이동. 권한은 RLS 가 최종 판정한다. 악보 PDF 는 브라우저에서 `scores` 버킷에 먼저 올린 뒤 경로만 저장한다.
+- **악보·정보글 주소(slug)는 입력받지 않는다.** 제목을 로마자로 바꿔 자동으로 만들고(`lib/slug.ts` `autoSlug`), 한글·영문·숫자가 없는 제목이면 `score-xxxxxx`·`article-xxxxxx`(랜덤)를 쓴다. 이미 있는 주소면 서버 액션이 저장 직전에 DB 를 확인해 `-2`, `-3` … 을 붙이고, 동시에 저장돼 unique 제약에 걸리면 다음 번호로 두 번까지 다시 시도한다(slug 는 DB 전체에서 unique). 데모 모드는 데모 글 주소와 비교한다.
+- **악보 첫 페이지 미리보기:** 악보 폼에서 PDF 를 고르면 브라우저가 pdf.js(`pdfjs-dist`, 폼에서만 동적 로드)로 첫 페이지를 가로 720px JPEG(품질 0.82)로 그려 보여 준다. 등록할 때 `thumbnails` 버킷의 `scores/<악기>/<이름>.jpg` 에 올리고 `scores.thumbnail_url` 에 **버킷 기준 상대 경로**로 저장한다(`file_url` 과 같은 규칙, 화면에서 `lib/data/storage.ts` `scoreThumbnailUrl` 이 공개 주소로 바꾼다. `https://` 로 시작하는 값은 그대로). 그리지 못하거나 업로드가 실패해도 악보 등록은 그대로 되고, 카드·상세는 기본(오선지) 표시로 보인다. `thumbnails` 버킷 쓰기는 schema.sql 의 `omu_storage_staff_*` 정책(에디터·관리자)으로 이미 열려 있다.
 - **데모 모드:** 화면 상단 "데모 작성 모드" 표시와 역할 선택기(비로그인·회원·에디터·관리자)가 나온다. 제출하면 검증·권한 확인까지 실제와 같이 돌고, 결과는 서버가 아니라 이 브라우저 localStorage(`omu-demo-writes`)에만 보관된다. 역할 쿠키(`omu_demo_role`)는 Supabase 모드에서는 무시된다.
 - 새 입력 항목(태그·모집 역할·마감일·물건 상태)을 쓰려면 `supabase/migrations/20260929_write_fields.sql` 을 schema.sql 다음에 실행해야 한다.
 

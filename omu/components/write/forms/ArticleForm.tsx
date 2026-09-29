@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ARTICLE_CATEGORIES, articlePath } from "@/lib/site";
+import { ARTICLE_CATEGORIES } from "@/lib/site";
 import { submitArticle } from "@/lib/write/actions";
 import { LIMITS } from "@/lib/write/validate";
 import { CheckboxField, ChoiceField, SelectField, TextArea, TextField } from "../fields";
 import { WriteFormShell } from "../WriteFormShell";
-import { TitleSlugFields } from "./SlugFields";
 
 export function ArticleForm({ mode, isAdmin, defaults }: { mode: "demo" | "supabase"; isAdmin: boolean; defaults: { category?: string } }) {
   return (
@@ -29,7 +28,6 @@ function Fields({
 }) {
   const [category, setCategory] = useState(values.category ?? defaults.category ?? "");
   const [display, setDisplay] = useState(values.author_display ?? "editor");
-  const prefix = category ? articlePath(category, "").replace(/\/$/, "") : "/info/분류";
 
   return (
     <>
@@ -43,7 +41,7 @@ function Fields({
         options={Object.entries(ARTICLE_CATEGORIES).map(([value, label]) => ({ value, label }))}
         hint="장비 정보·악기 정보는 ‘악기’ 메뉴에, 나머지는 ‘음악정보’에 보여요."
       />
-      <TitleSlugFields titleLabel="제목" pathPrefix={prefix} values={values} errors={errors} placeholder="예) 첫 통기타, 30만 원 안에서 고르는 체크리스트" />
+      <TextField name="title" label="제목" required maxLength={LIMITS.title} defaultValue={values.title} error={errors.title} placeholder="예) 첫 통기타, 매장에서 확인할 체크리스트" />
       <TextArea
         name="meta_description"
         label="요약(검색 설명)"

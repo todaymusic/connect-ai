@@ -49,6 +49,8 @@ export type Score = {
   description: string;
   /** Storage 경로. 아직 파일이 없으면 null → 다운로드는 '준비 중' */
   fileUrl: string | null;
+  /** PDF 첫 페이지 미리보기 이미지의 공개 주소. 없으면 null → 카드·상세는 기본(오선지) 표시 */
+  thumbnailUrl: string | null;
   author: Author | null;
   createdAt: string;
 };

@@ -27,7 +27,7 @@ import {
   type SkillLevel,
   type TradeType,
 } from "../site";
-import { SLUG_PATTERN } from "../slug";
+import { SLUG_PATTERN, autoSlug } from "../slug";
 
 export type Raw = Record<string, string | undefined>;
 export type FieldErrors = Record<string, string>;
@@ -310,6 +310,20 @@ export function validateScoreRequest(raw: Raw): Validated<ScoreRequestInput> {
   return done(e, { song_title: song, instrument: instrument as ScoreInstrument, description });
 }
 
+/* ───────── 자동 주소 ───────── */
+/**
+ * 악보·정보글 주소(slug)는 입력받지 않고 제목으로 만든다(로마자, 없으면 '<prefix>-랜덤').
+ * 같은 주소가 이미 있으면 서버 액션이 저장 직전에 -2, -3 … 을 붙인다(lib/write/actions.ts).
+ */
+function checkedSlug(e: FieldErrors, title: string, prefix: string): string {
+  const slug = autoSlug(title, prefix);
+  if (title && !e.title && (!SLUG_PATTERN.test(slug) || slug.length > 80)) e.title = "이 제목으로는 주소를 만들 수 없어요. 제목을 조금 바꿔 주세요.";
+  return slug;
+}
+
+/** 악보 미리보기 이미지 경로 — thumbnails 버킷의 scores/<악기>/<이름>.jpg */
+const THUMB_PATH = /^scores\/[a-z0-9-]+\/[a-z0-9-]+\.(jpe?g|png|webp)$/;
+
 /* ───────── 악보 (에디터) ───────── */
 export type ScoreInput = {
   title: string;
@@ -321,13 +335,14 @@ export type ScoreInput = {
   meta_description: string;
   file_path: string | null;
   file_name: string | null;
+  /** thumbnails 버킷 상대 경로 (브라우저가 만든 PDF 첫 페이지 이미지). 없으면 null */
+  thumbnail_path: string | null;
 };
 export function validateScore(raw: Raw, { requireFile }: { requireFile: boolean }): Validated<ScoreInput> {
   const e: FieldErrors = {};
   const title = str(raw, "title");
   required(e, "title", title, "곡 제목", LIMITS.title);
-  const slug = str(raw, "slug").toLowerCase();
-  if (!SLUG_PATTERN.test(slug) || slug.length > 80) e.slug = "주소는 영문 소문자·숫자·하이픈(-)만, 80자 이하로 적어 주세요.";
+  const slug = checkedSlug(e, title, "score");
   const instrument = str(raw, "instrument");
   if (!isKey(SCORE_INSTRUMENTS, instrument)) e.instrument = "악기를 골라 주세요.";
   const difficulty = str(raw, "difficulty");
@@ -341,6 +356,9 @@ export function validateScore(raw: Raw, { requireFile }: { requireFile: boolean 
   const file_path = opt(raw, "file_path");
   const file_name = opt(raw, "file_name");
   if (requireFile && !file_path) e.file = "악보 PDF 파일을 올려 주세요.";
+  // 미리보기 이미지는 선택 — 형식이 이상하면 등록은 막지 않고 버린다
+  const thumb = opt(raw, "thumbnail_path");
+  const thumbnail_path = thumb && THUMB_PATH.test(thumb) && thumb.length <= 200 ? thumb : null;
   return done(e, {
     title,
     slug,
@@ -351,6 +369,7 @@ export function validateScore(raw: Raw, { requireFile }: { requireFile: boolean 
     meta_description: meta,
     file_path,
     file_name,
+    thumbnail_path,
   });
 }
 
@@ -372,8 +391,7 @@ export function validateArticle(raw: Raw): Validated<ArticleInput> {
   if (!isKey(ARTICLE_CATEGORIES, category)) e.category = "분류를 골라 주세요.";
   const title = str(raw, "title");
   required(e, "title", title, "제목", LIMITS.title);
-  const slug = str(raw, "slug").toLowerCase();
-  if (!SLUG_PATTERN.test(slug) || slug.length > 80) e.slug = "주소는 영문 소문자·숫자·하이픈(-)만, 80자 이하로 적어 주세요.";
+  const slug = checkedSlug(e, title, "article");
   const meta = str(raw, "meta_description");
   required(e, "meta_description", meta, "요약(검색 설명)", LIMITS.meta);
   const content = str(raw, "content");
