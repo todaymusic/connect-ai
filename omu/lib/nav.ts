@@ -7,6 +7,7 @@ import {
   RECRUIT_CATEGORIES,
   SCORE_INSTRUMENTS,
 } from "./site";
+import { getWriteType } from "./write/config";
 
 export type NavSection = {
   href: string;
@@ -20,7 +21,7 @@ const [score, info, gear, recruit, community] = MAIN_MENU;
 export const NAV_SECTIONS: NavSection[] = [
   {
     ...score,
-    description: "과목별 무료 악보와 코드·연습보, 악보 요청까지",
+    description: "무료 악보는 준비 중 · 찾는 곡은 악보 요청으로",
     children: [
       ...Object.entries(SCORE_INSTRUMENTS).map(([key, label]) => ({ href: `/score/${key}`, label })),
       { href: "/score/requests", label: "악보 요청" },
@@ -33,7 +34,7 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     ...gear,
-    description: "중고 장터에서 사고팔고, 장비·악기 추천 읽기",
+    description: "장비·악기 정보 읽기 · 중고 장터는 준비 중",
     children: [
       { href: "/gear/market", label: "중고 장터" },
       ...Object.entries(GEAR_ARTICLE_CATEGORIES).map(([key, label]) => ({ href: `/gear/${key}`, label })),
@@ -41,7 +42,7 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     ...recruit,
-    description: "밴드 멤버·세션·강사·오디션 공고",
+    description: "밴드 멤버·세션·강사·오디션 공고 · 준비 중",
     children: Object.entries(RECRUIT_CATEGORIES).map(([key, label]) => ({ href: `/recruit/${key}`, label })),
   },
   {
@@ -51,10 +52,13 @@ export const NAV_SECTIONS: NavSection[] = [
   },
 ];
 
-/** 글쓰기 CTA 드롭다운 항목 — 회원이 바로 쓸 수 있는 유형 (악보·정보글은 작성 허브에서 에디터에게만 열린다) */
+/**
+ * 글쓰기 CTA 드롭다운 항목 — 회원이 바로 쓸 수 있는 유형 (악보·정보글은 작성 허브에서 에디터에게만 열린다)
+ * 아직 열지 않은 게시판(lib/write/config 의 closed)은 메뉴에서 뺀다 — 작성 허브에서 '준비 중'으로만 보인다.
+ */
 export const WRITE_ACTIONS = [
-  { key: "community", href: "/write/community", label: "커뮤니티 글", hint: "자유·익명·Q&A·연주 자랑" },
+  { key: "community", href: "/write/community", label: "커뮤니티 글", hint: "자유·익명·Q&A·연주 자랑 · 로그인 없이" },
   { key: "market", href: "/write/market", label: "중고 판매글", hint: "판매·구매·나눔" },
   { key: "recruit", href: "/write/recruit", label: "모집글", hint: "밴드·세션·레슨·오디션" },
   { key: "score-request", href: "/write/score-request", label: "악보 요청", hint: "이 곡 악보 있나요?" },
-] as const;
+].filter((a) => !getWriteType(a.key)?.closed);

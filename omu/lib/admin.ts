@@ -175,19 +175,22 @@ export async function getAdminSummary(access: AdminAccess): Promise<AdminSummary
   };
 }
 
-/** Supabase 연결 전 미리보기용 목데이터 */
+/**
+ * Supabase 연결 전 미리보기 — 화면 구성만 보여 준다.
+ * 공개 전 정리: 지어낸 수치는 두지 않는다(모두 '—'). 실제 숫자는 Supabase 연결 후 관리자에게만 보인다.
+ */
 const MOCK_SUMMARY: Omit<AdminSummary, "deploy"> = {
   source: "mock",
-  members: { total: 128, admins: 1, editors: 2 },
-  scores: { total: 24 },
-  articles: { published: 3, drafts: 5 },
-  market: { selling: 26, total: 41 },
-  reports: { open: 2 },
-  guest: { posts: 6, comments: 23 },
+  members: { total: null, admins: null, editors: null },
+  scores: { total: null },
+  articles: { published: null, drafts: null },
+  market: { selling: null, total: null },
+  reports: { open: null },
+  guest: { posts: null, comments: null },
   storage: [
-    { id: "scores", label: "악보 PDF", ok: true, files: 24 },
-    { id: "thumbnails", label: "썸네일", ok: true, files: 12 },
-    { id: "market", label: "중고 사진", ok: true, files: 37 },
+    { id: "scores", label: "악보 PDF", ok: null, files: null },
+    { id: "thumbnails", label: "썸네일", ok: null, files: null },
+    { id: "market", label: "중고 사진", ok: null, files: null },
   ],
   warnings: [],
 };
@@ -245,9 +248,5 @@ export async function listReports(access: AdminAccess, status: ReportStatus | "a
   return { items, error: null };
 }
 
-const hoursAgo = (h: number) => new Date(Date.now() - h * 3600_000).toISOString();
-const MOCK_REPORTS: AdminReport[] = [
-  { id: "mr1", createdAt: hoursAgo(2), targetType: "post", targetId: "g1", reason: "spam", detail: "같은 광고 링크가 반복돼요.", status: "open", reporter: "guest", title: "가입 없이 처음 써봐요, 통기타 줄 얼마나 자주 가세요?", path: "/community/free/g1", resolvedAt: null },
-  { id: "mr2", createdAt: hoursAgo(5), targetType: "comment", targetId: "c11", reason: "abuse", detail: null, status: "open", reporter: "member", title: "저는 한 달 반 정도요. 코팅 줄 쓰면 좀 더 오래 가요.", path: "/community/free/g1#comment-c11", resolvedAt: null },
-  { id: "mr3", createdAt: hoursAgo(30), targetType: "market", targetId: "m2", reason: "fraud", detail: "선입금을 요구했어요.", status: "resolved", reporter: "member", title: "스트랫 타입 일렉기타 + 소프트케이스", path: "/gear/market/m2", resolvedAt: hoursAgo(20) },
-];
+// 미리보기에는 예시 신고를 두지 않는다(이 브라우저에서 데모로 보낸 신고만 따로 보인다)
+const MOCK_REPORTS: AdminReport[] = [];

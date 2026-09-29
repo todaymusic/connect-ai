@@ -1,5 +1,5 @@
 import { PostRow } from "@/components/cards/PostRow";
-import { CategoryTabs, ChipFilter, EmptyState, FilterForm, ListHeader, ListShell, Pagination, ResultCount } from "@/components/list/ListLayout";
+import { CategoryTabs, ChipFilter, EmptyState, FilterForm, FirstPostState, ListHeader, ListShell, Pagination, ResultCount } from "@/components/list/ListLayout";
 import { listPosts } from "@/lib/data/posts";
 import { COMMUNITY_CATEGORIES, QNA_SUBJECTS, type CommunityCategory } from "@/lib/site";
 import { first, pageParam, pick, type Query, type SearchParams } from "@/lib/url";
@@ -23,6 +23,8 @@ export async function CommunityListPage({ category, searchParams }: { category?:
   const page = pageParam(searchParams.page);
   const query: Query = { subject, status, sort, q, page: page > 1 ? String(page) : undefined };
   const result = await listPosts({ category, subject, unanswered: status === "open", sort: sort ?? "latest", q, page, pageSize: 15 });
+  // 이 게시판에 글이 하나도 없으면 필터 대신 첫 글 쓰기 안내
+  const empty = result.total === 0 && (await listPosts({ category, pageSize: 1 })).total === 0;
 
   return (
     <ListShell>
@@ -41,6 +43,12 @@ export async function CommunityListPage({ category, searchParams }: { category?:
           ...(Object.keys(COMMUNITY_CATEGORIES) as CommunityCategory[]).map((k) => ({ key: k, href: `/community/${k}`, label: COMMUNITY_CATEGORIES[k] })),
         ]}
       />
+      {empty ? (
+        <div className="mt-6">
+          <FirstPostState href={`/write/community${category ? `?category=${category}` : ""}`} />
+        </div>
+      ) : (
+      <>
       <div className="mt-5 space-y-3 rounded-2xl border border-line bg-card p-3 sm:p-4">
         <FilterForm pathname={pathname} query={query} placeholder="제목·태그로 찾기" keep={["subject", "status", "sort"]} />
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -81,6 +89,8 @@ export async function CommunityListPage({ category, searchParams }: { category?:
         </ul>
       )}
       <Pagination page={result.page} pageCount={result.pageCount} pathname={pathname} query={query} />
+      </>
+      )}
     </ListShell>
   );
 }

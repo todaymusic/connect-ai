@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ScoreCard } from "@/components/cards/ScoreCard";
-import { CategoryTabs, ChipFilter, EmptyState, FilterForm, ListHeader, ListShell, Pagination, ResultCount } from "@/components/list/ListLayout";
+import { CategoryTabs, ChipFilter, ComingSoonState, EmptyState, FilterForm, ListHeader, ListShell, Pagination, ResultCount } from "@/components/list/ListLayout";
 import { listScores } from "@/lib/data/scores";
 import { DIFFICULTIES, SCORE_GENRES, SCORE_INSTRUMENTS, type ScoreInstrument } from "@/lib/site";
 import { first, pageParam, pick, type Query, type SearchParams } from "@/lib/url";
@@ -18,13 +18,19 @@ export async function ScoreList({ instrument, searchParams }: { instrument?: Sco
 
   const result = await listScores({ instrument, difficulty, genre, q, sort: sort ?? "latest", page });
   const title = instrument ? `${SCORE_INSTRUMENTS[instrument]} 악보` : "악보공유";
+  // 등록된 악보가 하나도 없으면 '검색 결과 없음' 대신 준비 중 안내 (필터는 숨김)
+  const comingSoon = result.total === 0 && (await listScores({ pageSize: 1 })).total === 0;
 
   return (
     <ListShell>
       <ListHeader
         eyebrow="Free Scores"
         title={title}
-        description="에디터가 정리한 무료 악보를 과목별로 찾아보세요. 원하는 곡이 없으면 악보를 요청할 수 있어요."
+        description={
+          comingSoon
+            ? "에디터가 확인한 무료 악보를 준비하고 있어요. 원하는 곡이 있으면 악보를 요청할 수 있어요."
+            : "에디터가 정리한 무료 악보를 과목별로 찾아보세요. 원하는 곡이 없으면 악보를 요청할 수 있어요."
+        }
         writeHref="/write/score-request"
         writeLabel="악보 요청"
       />
@@ -38,6 +44,14 @@ export async function ScoreList({ instrument, searchParams }: { instrument?: Sco
         ]}
       />
 
+      {comingSoon ? (
+        <div className="mt-6">
+          <ComingSoonState title="악보 공유는 준비 중이에요" action={{ href: "/info", label: "음악정보 먼저 보기" }}>
+            저작권을 확인한 무료 악보만 올릴 예정이에요. 첫 악보가 등록되면 이곳에서 과목별로 찾아볼 수 있어요.
+          </ComingSoonState>
+        </div>
+      ) : (
+      <>
       <div className="mt-5 space-y-3 rounded-2xl border border-line bg-card p-3 sm:p-4">
         <FilterForm
           pathname={pathname}
@@ -91,6 +105,8 @@ export async function ScoreList({ instrument, searchParams }: { instrument?: Sco
         </ul>
       )}
       <Pagination page={result.page} pageCount={result.pageCount} pathname={pathname} query={query} />
+      </>
+      )}
     </ListShell>
   );
 }

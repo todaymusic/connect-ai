@@ -38,11 +38,14 @@ export function ArticleCard({ article: a, headingLevel = "h3" }: { article: Arti
         <div className="mt-auto flex items-center justify-between gap-2 pt-4 text-xs text-ink-3">
           <AuthorLabel author={a.author} display={a.authorDisplay} />
           <span className="font-display flex shrink-0 items-center gap-2.5">
-            <span className="inline-flex items-center gap-1">
-              <Eye aria-hidden className="size-3.5" />
-              <span className="sr-only">조회수</span>
-              {formatCount(a.views)}
-            </span>
+            {/* 조회수는 실제로 쌓인 뒤에만 보여 준다(0 은 숨김) */}
+            {a.views > 0 && (
+              <span className="inline-flex items-center gap-1">
+                <Eye aria-hidden className="size-3.5" />
+                <span className="sr-only">조회수</span>
+                {formatCount(a.views)}
+              </span>
+            )}
             <span className="inline-flex items-center gap-1">
               <Clock aria-hidden className="size-3.5" />
               {a.readMinutes}분

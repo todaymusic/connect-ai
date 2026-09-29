@@ -101,8 +101,8 @@ export function AdminDashboard({ summary, adminName }: { summary: AdminSummary; 
 
       {isMock && (
         <p className="mt-5 rounded-xl border border-coral-soft bg-coral-soft/30 px-4 py-3 text-sm leading-relaxed text-ink-2">
-          Supabase가 연결되지 않은 개발용 미리보기예요. 숫자는 모두 예시 값이고, 운영 배포에서는 이 화면 대신 로그인·권한
-          확인이 먼저 이뤄져요.
+          Supabase가 연결되지 않은 미리보기예요. 화면 구성만 보여 주고 실제 수치는 없어요(—). Supabase를 연결하면 관리자에게만
+          실제 숫자가 보여요.
         </p>
       )}
       {summary.warnings.map((w) => (

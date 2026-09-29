@@ -38,7 +38,7 @@ export default async function WriteHubPage({ searchParams }: PageProps<"/write">
           </>
         ) : (
           <>
-            <strong className="text-ink">커뮤니티 글과 댓글은 로그인 없이 바로</strong> 쓸 수 있어요. 장터·구인·악보 요청은 로그인하면 쓸 수 있어요.
+            <strong className="text-ink">커뮤니티 글과 댓글은 로그인 없이 바로</strong> 쓸 수 있어요. 악보 요청은 로그인하면 쓸 수 있고, 중고 장터·구인은 준비 중이에요.
           </>
         )}
       </p>
@@ -62,6 +62,26 @@ export default async function WriteHubPage({ searchParams }: PageProps<"/write">
           const allowed = canWrite(role, t.key);
           const reason = t.minRole === "editor" ? "에디터·관리자 전용이에요" : !role ? "로그인 후 쓸 수 있어요" : "";
           const guestOk = !role && t.guestAllowed;
+          // 아직 열지 않은 게시판 — 링크 없이 '준비 중'으로만 보여 준다 (서버 액션도 차단)
+          if (t.closed) {
+            return (
+              <li key={t.key}>
+                <div aria-disabled="true" aria-describedby={`${t.key}-reason`} className="card flex h-full items-start gap-3 bg-paper p-4 sm:p-5">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-stone text-ink-3">
+                    <Icon aria-hidden className="size-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs font-semibold text-ink-3">{t.section}</span>
+                    <span className="mt-0.5 block text-base font-extrabold text-ink-2">{t.label}</span>
+                    <span className="mt-1 block text-[13px] text-ink-3">{t.hint}</span>
+                    <span id={`${t.key}-reason`} className="mt-2 inline-block rounded-full bg-stone px-2 py-0.5 text-[11px] font-bold text-ink-3">
+                      준비 중
+                    </span>
+                  </span>
+                </div>
+              </li>
+            );
+          }
           return (
             <li key={t.key}>
               <Link

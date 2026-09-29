@@ -66,10 +66,12 @@ export async function ArticleDetail({ article: a }: { article: Article }) {
           <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-ink-3">
             <AuthorLabel author={a.author} display={a.authorDisplay} />
             <time dateTime={a.publishedAt}>{formatDate(a.publishedAt)}</time>
-            <span className="font-display inline-flex items-center gap-1">
-              <Eye aria-hidden className="size-3.5" />
-              조회 {formatCount(a.views)}
-            </span>
+            {a.views > 0 && (
+              <span className="font-display inline-flex items-center gap-1">
+                <Eye aria-hidden className="size-3.5" />
+                조회 {formatCount(a.views)}
+              </span>
+            )}
             <span className="inline-flex items-center gap-1">
               <Clock aria-hidden className="size-3.5" />
               {a.readMinutes}분 분량

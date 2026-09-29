@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { ArrowRight } from "lucide-react";
 import { ArticleCard } from "@/components/cards/ArticleCard";
 import { MARKET_ICON, MarketCard } from "@/components/cards/MarketCard";
-import { CategoryTabs, ListHeader, ListShell } from "@/components/list/ListLayout";
+import { CategoryTabs, ComingSoonState, ListHeader, ListShell } from "@/components/list/ListLayout";
+import { closedReason } from "@/lib/write/config";
 import { SectionHeader } from "@/components/ui";
 import { listArticles } from "@/lib/data/articles";
 import { listMarketItems } from "@/lib/data/market";
@@ -24,13 +25,32 @@ export default async function GearPage() {
     listMarketItems({ pageSize: 8 }),
     listArticles({ categories: GEAR_KEYS, pageSize: 3 }),
   ]);
+  // 매물이 하나도 없으면 거래 바로가기를 숨기고 장터 자리에 준비 중 안내
+  const marketOpen = market.total > 0;
+  const closed = closedReason("market");
+  const guideSection = (
+    <section aria-labelledby="guide-title" className={marketOpen ? "mt-12" : "mt-8"}>
+      <SectionHeader id="guide-title" title="장비·악기 정보" description="고르기 전에 읽어보면 좋은 글" href="/gear/equipment" />
+      <ul className="grid gap-3 md:grid-cols-3">
+        {guides.items.map((a) => (
+          <li key={a.id}>
+            <ArticleCard article={a} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
   return (
     <ListShell>
       <ListHeader
         eyebrow="Gear"
         title="악기"
-        description="필요한 악기는 중고로 구하고, 고르기 전엔 장비·악기 정보를 읽어보세요."
-        writeHref="/write/market"
+        description={
+          marketOpen
+            ? "필요한 악기는 중고로 구하고, 고르기 전엔 장비·악기 정보를 읽어보세요."
+            : "악기·장비를 고르기 전에 읽어보면 좋은 정보를 모았어요. 중고 장터는 준비 중이에요."
+        }
+        writeHref={closed ? undefined : "/write/market"}
         writeLabel="판매글 쓰기"
       />
       <CategoryTabs
@@ -43,6 +63,10 @@ export default async function GearPage() {
         ]}
       />
 
+      {!marketOpen && guideSection}
+
+      {marketOpen ? (
+      <>
       {/* 거래 방식·종류 바로가기 */}
       <div className="mt-6 grid gap-2.5 sm:grid-cols-3">
         {(Object.keys(TRADE_TYPES) as (keyof typeof TRADE_TYPES)[]).map((t) => (
@@ -82,16 +106,16 @@ export default async function GearPage() {
         </ul>
       </section>
 
-      <section aria-labelledby="guide-title" className="mt-12">
-        <SectionHeader id="guide-title" title="장비·악기 정보" description="고르기 전에 읽어보면 좋은 글" href="/gear/equipment" />
-        <ul className="grid gap-3 md:grid-cols-3">
-          {guides.items.map((a) => (
-            <li key={a.id}>
-              <ArticleCard article={a} />
-            </li>
-          ))}
-        </ul>
-      </section>
+      {guideSection}
+      </>
+      ) : (
+        <section aria-labelledby="market-title" className="mt-12">
+          <SectionHeader id="market-title" title="중고 장터" href="/gear/market" />
+          <ComingSoonState title="중고 장터는 준비 중이에요">
+            {closed ? "안전한 거래 기능을 갖춘 뒤 열 예정이에요." : "아직 올라온 매물이 없어요."}
+          </ComingSoonState>
+        </section>
+      )}
     </ListShell>
   );
 }

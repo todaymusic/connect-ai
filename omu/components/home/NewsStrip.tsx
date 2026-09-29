@@ -1,14 +1,13 @@
 import Link from "next/link";
-import { CalendarDays, FileMusic, Megaphone } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-// 1차: 정적 배너 (작업지시서 9-2의 '히어로 배너 — 1차는 정적 배너 가능')
-const NEWS = [
-  { icon: FileMusic, tag: "신규 악보", title: "피아노 입문곡 12편 무료 공개", href: "/score/piano", tone: "text-coral-deep" },
-  { icon: CalendarDays, tag: "공모전", title: "가을 싱어송라이터 공모전 모음", href: "/info/contest", tone: "text-blue" },
-  { icon: Megaphone, tag: "공지", title: "OMU 오픈 베타를 시작했어요", href: "/community/free", tone: "text-ink-2" },
-];
+// 홈 소식 띠 — 실제로 알릴 소식이 생기면 여기에 넣는다(예: 새 기능 오픈 공지).
+// 공개 전 정리: 사실이 아닌 소식(가짜 신규 악보·공모전·오픈 공지)은 두지 않는다. 비어 있으면 아무것도 그리지 않는다.
+type News = { icon: LucideIcon; tag: string; title: string; href: string; tone: string };
+const NEWS: News[] = [];
 
 export function NewsStrip() {
+  if (NEWS.length === 0) return null;
   return (
     <section aria-label="이번 주 소식" className="mx-auto max-w-[1120px] px-4 sm:px-6">
       <ul className="scrollbar-none -mx-4 flex snap-x scroll-px-4 gap-2.5 overflow-x-auto px-4 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">

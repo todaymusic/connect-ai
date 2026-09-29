@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { NAV_SECTIONS } from "@/lib/nav";
-import { CONTACT_EMAIL, SITE_TAGLINE } from "@/lib/site";
+import { CONTACT, SITE_TAGLINE } from "@/lib/site";
 import { Logo } from "./Logo";
 
 export function Footer() {
@@ -11,12 +11,15 @@ export function Footer() {
           <div>
             <Logo className="h-9 w-[69px]" />
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink-2">{SITE_TAGLINE}</p>
-            <p className="mt-4 text-sm text-ink-2">
-              고객문의{" "}
-              <a href={`mailto:${CONTACT_EMAIL}`} className="font-semibold text-blue hover:underline">
-                {CONTACT_EMAIL}
-              </a>
-            </p>
+            {/* 공식 연락처가 정해지면(lib/site.ts CONTACT) 표시 */}
+            {CONTACT.email && (
+              <p className="mt-4 text-sm text-ink-2">
+                고객문의{" "}
+                <a href={`mailto:${CONTACT.email}`} className="font-semibold text-blue hover:underline">
+                  {CONTACT.email}
+                </a>
+              </p>
+            )}
           </div>
 
           <nav aria-label="사이트 전체 메뉴" className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, PenLine, SearchX } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, PenLine, SearchX } from "lucide-react";
 import type { ReactNode } from "react";
 import { hrefWith, type Query } from "@/lib/url";
 
@@ -199,6 +199,40 @@ export function EmptyState({ title, children }: { title: string; children?: Reac
       <SearchX aria-hidden className="mx-auto size-8 text-ink-3" />
       <p className="mt-3 font-bold text-ink">{title}</p>
       {children && <div className="mt-1.5 text-sm leading-relaxed text-ink-2">{children}</div>}
+    </div>
+  );
+}
+
+/** 아직 열지 않은(콘텐츠가 없는) 게시판 — '검색 결과 없음' 대신 준비 중 안내 */
+export function ComingSoonState({ title, children, action }: { title: string; children?: ReactNode; action?: { href: string; label: string } }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-line-2 bg-card px-5 py-12 text-center">
+      <span className="mx-auto flex size-11 items-center justify-center rounded-full bg-stone text-ink-2">
+        <Clock aria-hidden className="size-5" />
+      </span>
+      <p className="mt-3 font-bold text-ink">{title}</p>
+      {children && <div className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-ink-2">{children}</div>}
+      {action && (
+        <Link href={action.href} className="mt-5 inline-flex h-10 items-center rounded-full border border-line-2 bg-paper px-5 text-sm font-bold text-ink hover:border-ink-3">
+          {action.label}
+        </Link>
+      )}
+    </div>
+  );
+}
+
+/** 글이 하나도 없는 커뮤니티 — 첫 글 쓰기로 안내 */
+export function FirstPostState({ href = "/write/community" }: { href?: string }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-line-2 bg-card px-5 py-12 text-center">
+      <span className="mx-auto flex size-11 items-center justify-center rounded-full bg-coral-soft/60 text-coral-deep">
+        <PenLine aria-hidden className="size-5" />
+      </span>
+      <p className="mt-3 font-bold text-ink">아직 올라온 글이 없어요</p>
+      <p className="mt-1.5 text-sm text-ink-2">첫 글을 남겨보세요. 로그인 없이도 쓸 수 있어요.</p>
+      <Link href={href} className="mt-5 inline-flex h-10 items-center rounded-full bg-coral px-5 text-sm font-bold text-white hover:bg-coral-deep">
+        첫 글 쓰기
+      </Link>
     </div>
   );
 }
