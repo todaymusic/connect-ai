@@ -43,7 +43,7 @@ export function AdminGuardNotice({ access }: { access: Extract<AdminAccess, { ki
         return {
           icon: ServerOff,
           title: "아직 관리자 기능을 쓸 수 없어요",
-          body: "Supabase가 연결되면 관리자 페이지가 열려요. 지금은 데모 모드라, 작성 허브에서 ‘관리자’ 역할을 고르면 예시 데이터로 미리 볼 수 있어요.",
+          body: "Supabase가 연결되면 관리자 페이지가 열려요. 지금은 데모 모드라, 작성 허브에서 ‘관리자’ 역할을 고르면 관리 화면 구성만 미리 볼 수 있어요(실제 데이터 없음).",
           actions: (
             <Link href="/write" className="inline-flex h-11 items-center rounded-full bg-ink px-6 text-sm font-bold text-paper">
               데모 역할 고르기

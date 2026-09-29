@@ -85,6 +85,7 @@ function ReportDialog({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [demo, setDemo] = useState(false);
   const started = useStartedAt();
   const honeypot = useRef<HTMLInputElement>(null);
   const firstRef = useRef<HTMLInputElement>(null);
@@ -129,6 +130,7 @@ function ReportDialog({
       return;
     }
     if (res.status === "demo") {
+      setDemo(true);
       addLocalReport({
         id: `lr-${Date.now().toString(36)}`,
         targetType,
@@ -167,7 +169,9 @@ function ReportDialog({
         {done ? (
           <>
             <p className="mt-2 text-sm leading-relaxed text-ink-2">
-              운영자가 확인한 뒤 필요하면 글을 숨기거나 정리해요. 같은 글은 다시 신고할 수 없어요.
+              {demo
+                ? "지금은 데모 모드라 신고가 서버로 전달되지 않고 이 브라우저에만 기록돼요. 정식 오픈 후에는 운영자에게 전달돼요."
+                : "운영자가 확인한 뒤 필요하면 글을 숨기거나 정리해요. 같은 글은 다시 신고할 수 없어요."}
             </p>
             <button
               ref={closeRef}

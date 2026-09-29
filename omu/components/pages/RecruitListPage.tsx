@@ -1,5 +1,6 @@
 import { RecruitCard } from "@/components/cards/RecruitCard";
-import { CategoryTabs, ChipFilter, EmptyState, FilterForm, ListHeader, ListShell, Pagination, ResultCount } from "@/components/list/ListLayout";
+import { CategoryTabs, ChipFilter, ComingSoonState, EmptyState, FilterForm, ListHeader, ListShell, Pagination, ResultCount } from "@/components/list/ListLayout";
+import { closedReason } from "@/lib/write/config";
 import { LevelBadge } from "@/components/ui";
 import { listRecruits } from "@/lib/data/recruits";
 import { RECRUIT_CATEGORIES, RECRUIT_LEVELS, REGIONS, type RecruitCategory, type RecruitLevel } from "@/lib/site";
@@ -16,14 +17,17 @@ export async function RecruitListPage({ category, searchParams }: { category?: R
   const page = pageParam(searchParams.page);
   const query: Query = { level, region, open, q, page: page > 1 ? String(page) : undefined };
   const result = await listRecruits({ category, level, region, openOnly: Boolean(open), q, page });
+  // 모집글이 하나도 없으면 '검색 결과 없음' 대신 준비 중 안내 (필터는 숨김)
+  const empty = result.total === 0 && (await listRecruits({ pageSize: 1 })).total === 0;
+  const closed = closedReason("recruit");
 
   return (
     <ListShell>
       <ListHeader
         eyebrow="Recruit"
         title={category ? RECRUIT_CATEGORIES[category] : "구인·모집"}
-        description="밴드 멤버, 세션·외주, 강사·레슨, 공고·오디션까지. 성격 배지로 나에게 맞는 팀을 찾아보세요."
-        writeHref={`/write/recruit${category ? `?category=${category}` : ""}`}
+        description={empty ? "밴드 멤버, 세션·외주, 강사·레슨, 공고·오디션 게시판을 준비하고 있어요." : "밴드 멤버, 세션·외주, 강사·레슨, 공고·오디션까지. 성격 배지로 나에게 맞는 팀을 찾아보세요."}
+        writeHref={closed ? undefined : `/write/recruit${category ? `?category=${category}` : ""}`}
         writeLabel="모집글 쓰기"
       />
       <CategoryTabs
@@ -34,6 +38,14 @@ export async function RecruitListPage({ category, searchParams }: { category?: R
           ...(Object.keys(RECRUIT_CATEGORIES) as RecruitCategory[]).map((k) => ({ key: k, href: `/recruit/${k}`, label: RECRUIT_CATEGORIES[k] })),
         ]}
       />
+      {empty ? (
+        <div className="mt-6">
+          <ComingSoonState title="구인·모집은 준비 중이에요" action={{ href: "/community", label: "커뮤니티 둘러보기" }}>
+            {closed ? "곧 밴드·세션 모집글을 올릴 수 있게 열 예정이에요." : "아직 올라온 모집글이 없어요."} 그전까지는 커뮤니티에서 이야기를 나눠 보세요.
+          </ComingSoonState>
+        </div>
+      ) : (
+      <>
       <div className="mt-5 space-y-3 rounded-2xl border border-line bg-card p-3 sm:p-4">
         <FilterForm
           pathname={pathname}
@@ -83,6 +95,8 @@ export async function RecruitListPage({ category, searchParams }: { category?: R
         </ul>
       )}
       <Pagination page={result.page} pageCount={result.pageCount} pathname={pathname} query={query} />
+      </>
+      )}
     </ListShell>
   );
 }

@@ -15,16 +15,16 @@ export function HowOmuWorks() {
       <ul className="grid gap-3 md:grid-cols-3">
         <li className="card p-5">
           <EditorBadge />
-          <h3 className="mt-3 text-base font-bold text-ink">에디터가 확인한 악보·정보글</h3>
+          <h3 className="mt-3 text-base font-bold text-ink">에디터가 정리하는 정보글</h3>
           <p className="mt-1.5 text-sm leading-relaxed text-ink-2">
-            무료 악보와 음악정보 글은 OMU 에디터가 직접 정리해서 올려요. 에디터가 쓴 글에는 이 배지가 붙어요.
+            음악정보 글은 OMU 에디터가 정리해서 올리고, 에디터가 쓴 글에는 이 배지가 붙어요. 무료 악보도 에디터가 저작권을 확인한 것만 올릴 예정이에요.
           </p>
         </li>
         <li className="card p-5">
           <AdminBadge />
           <h3 className="mt-3 text-base font-bold text-ink">운영자가 챙기는 게시판</h3>
           <p className="mt-1.5 text-sm leading-relaxed text-ink-2">
-            공지, 신고 처리, 게시물 관리는 운영자가 맡아요. 불편한 글이나 의심스러운 거래는{" "}
+            신고 처리와 게시물 관리는 운영자가 맡아요. 불편한 글이나 댓글은{" "}
             <span className="inline-flex items-center gap-0.5 font-semibold text-ink">
               <Flag aria-hidden className="size-3.5" />
               신고

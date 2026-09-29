@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { LegalDoc, Table, Ul, type LegalSection } from "@/components/legal/LegalDoc";
-import { CONTACT_EMAIL } from "@/lib/site";
+import { CONTACT } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "개인정보처리방침",
@@ -84,8 +84,16 @@ const SECTIONS: LegalSection[] = [
     title: "정보주체의 권리와 행사 방법",
     body: (
       <p>
-        회원은 언제든 자신의 개인정보 열람·정정·삭제·처리 정지를 요청할 수 있습니다. <Link href="/contact" className="text-blue underline">고객센터</Link> 또는{" "}
-        <a href={`mailto:${CONTACT_EMAIL}`} className="text-blue underline">{CONTACT_EMAIL}</a> 로 요청하면 지체 없이 처리합니다. 소셜 계정 연결 해제는 카카오·네이버 계정 설정에서도 할 수 있습니다.
+        회원은 언제든 자신의 개인정보 열람·정정·삭제·처리 정지를 요청할 수 있으며, 운영자는 요청을 받으면 지체 없이 처리합니다.{" "}
+        {CONTACT.email ? (
+          <>
+            요청은 <Link href="/contact" className="text-blue underline">고객센터</Link> 또는{" "}
+            <a href={`mailto:${CONTACT.email}`} className="text-blue underline">{CONTACT.email}</a> 로 할 수 있습니다.
+          </>
+        ) : (
+          <>요청을 받을 문의 채널은 준비 중이며, 확정되면 이 방침과 <Link href="/contact" className="text-blue underline">고객센터</Link> 페이지에 안내합니다.</>
+        )}{" "}
+        소셜 계정 연결 해제는 카카오·네이버 계정 설정에서도 할 수 있습니다.
       </p>
     ),
   },
@@ -117,7 +125,11 @@ const SECTIONS: LegalSection[] = [
       <Ul
         items={[
           "책임자: [성명 · 직책 확정 필요]",
-          <>연락처: <a href={`mailto:${CONTACT_EMAIL}`} className="text-blue underline">{CONTACT_EMAIL}</a></>,
+          CONTACT.email ? (
+            <>연락처: <a href={`mailto:${CONTACT.email}`} className="text-blue underline">{CONTACT.email}</a></>
+          ) : (
+            "연락처: 문의 채널 준비 중 (확정되면 이 방침에 기재합니다)"
+          ),
           "개인정보 침해 신고: 개인정보침해신고센터(국번 없이 118), 개인정보분쟁조정위원회(1833-6972)",
         ]}
       />

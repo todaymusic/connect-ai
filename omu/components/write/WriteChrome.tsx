@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FlaskConical, Lock, ShieldAlert } from "lucide-react";
+import { Clock, FlaskConical, Lock, ShieldAlert } from "lucide-react";
 import { setDemoRole } from "@/lib/write/actions";
 import { DEMO_ROLES, type DemoRole } from "@/lib/write/config";
 
@@ -36,14 +36,14 @@ export function DemoRoleSwitcher({ current, next }: { current: DemoRole; next: s
 }
 
 /** 로그인 필요 / 권한 부족 안내 */
-export function WriteGate({ kind, message, next, demo }: { kind: "signed-out" | "forbidden"; message: string; next: string; demo: boolean }) {
-  const Icon = kind === "signed-out" ? Lock : ShieldAlert;
+export function WriteGate({ kind, message, next, demo }: { kind: "signed-out" | "forbidden" | "closed"; message: string; next: string; demo: boolean }) {
+  const Icon = kind === "signed-out" ? Lock : kind === "closed" ? Clock : ShieldAlert;
   return (
     <div className="card px-6 py-9 text-center sm:px-10">
       <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-stone text-ink-2">
         <Icon aria-hidden className="size-6" />
       </span>
-      <h2 className="mt-4 text-xl font-extrabold text-ink">{kind === "signed-out" ? "로그인이 필요해요" : "이 글은 쓸 수 없어요"}</h2>
+      <h2 className="mt-4 text-xl font-extrabold text-ink">{kind === "signed-out" ? "로그인이 필요해요" : kind === "closed" ? "아직 준비 중이에요" : "이 글은 쓸 수 없어요"}</h2>
       <p className="mt-2 text-sm leading-relaxed text-ink-2">{message}</p>
       <div className="mt-6 flex flex-wrap justify-center gap-2.5">
         {kind === "signed-out" ? (
@@ -59,6 +59,10 @@ export function WriteGate({ kind, message, next, demo }: { kind: "signed-out" | 
               로그인 없이 커뮤니티 글 쓰기
             </Link>
           </>
+        ) : kind === "closed" ? (
+          <Link href="/write/community" className="inline-flex h-11 items-center rounded-full bg-coral px-6 text-sm font-bold text-white hover:bg-coral-deep">
+            커뮤니티 글 쓰기
+          </Link>
         ) : (
           <Link href="/write/score-request" className="inline-flex h-11 items-center rounded-full bg-coral px-6 text-sm font-bold text-white hover:bg-coral-deep">
             악보 요청하기

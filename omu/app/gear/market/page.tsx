@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { MarketCard } from "@/components/cards/MarketCard";
-import { CategoryTabs, ChipFilter, EmptyState, FilterForm, ListHeader, ListShell, Pagination, ResultCount } from "@/components/list/ListLayout";
+import { CategoryTabs, ChipFilter, ComingSoonState, EmptyState, FilterForm, ListHeader, ListShell, Pagination, ResultCount } from "@/components/list/ListLayout";
+import { closedReason } from "@/lib/write/config";
 import { listMarketItems } from "@/lib/data/market";
 import { ARTICLE_CATEGORIES, GEAR_ARTICLE_CATEGORIES, MARKET_CATEGORIES, MARKET_STATUS, REGIONS, TRADE_TYPES, type GearArticleCategory } from "@/lib/site";
 import { first, pageParam, pick, type Query } from "@/lib/url";
@@ -22,14 +23,17 @@ export default async function MarketListPage({ searchParams }: PageProps<"/gear/
   const page = pageParam(sp.page);
   const query: Query = { trade, category, region, status, q, page: page > 1 ? String(page) : undefined };
   const result = await listMarketItems({ trade, category, region, status, q, page });
+  // 매물이 하나도 없으면 '검색 결과 없음' 대신 준비 중 안내 (필터는 숨김)
+  const empty = result.total === 0 && (await listMarketItems({ pageSize: 1 })).total === 0;
+  const closed = closedReason("market");
 
   return (
     <ListShell>
       <ListHeader
         eyebrow="Used Market"
         title="중고 장터"
-        description="직거래 중심의 악기·장비 거래. 판매·구매·나눔 글을 올릴 수 있어요."
-        writeHref="/write/market"
+        description={empty ? "직거래 중심의 악기·장비 거래 게시판을 준비하고 있어요." : "직거래 중심의 악기·장비 거래. 판매·구매·나눔 글을 올릴 수 있어요."}
+        writeHref={closed ? undefined : "/write/market"}
         writeLabel="판매글 쓰기"
       />
       <CategoryTabs
@@ -41,6 +45,14 @@ export default async function MarketListPage({ searchParams }: PageProps<"/gear/
           ...(Object.keys(GEAR_ARTICLE_CATEGORIES) as GearArticleCategory[]).map((k) => ({ key: k, href: `/gear/${k}`, label: ARTICLE_CATEGORIES[k] })),
         ]}
       />
+      {empty ? (
+        <div className="mt-6">
+          <ComingSoonState title="중고 장터는 준비 중이에요" action={{ href: "/gear", label: "장비·악기 정보 보기" }}>
+            {closed ? "안전한 거래 기능을 갖춘 뒤 열 예정이에요." : "아직 올라온 매물이 없어요."} 그전까지는 장비·악기 정보글을 참고해 보세요.
+          </ComingSoonState>
+        </div>
+      ) : (
+      <>
       <div className="mt-5 space-y-3 rounded-2xl border border-line bg-card p-3 sm:p-4">
         <FilterForm
           pathname={pathname}
@@ -88,6 +100,8 @@ export default async function MarketListPage({ searchParams }: PageProps<"/gear/
         </ul>
       )}
       <Pagination page={result.page} pageCount={result.pageCount} pathname={pathname} query={query} />
+      </>
+      )}
     </ListShell>
   );
 }

@@ -4,7 +4,16 @@ export const SITE_NAME = "OMU";
 export const SITE_TAGLINE = "악보부터 밴드 구인까지, 음악하는 사람들의 모든 것";
 export const SITE_DESCRIPTION =
   "무료 악보, 악기 입문·입시 정보, 중고 악기 장터, 밴드·세션 구인, 음악 커뮤니티를 한곳에서. OMU 음악 커뮤니티 포털.";
-export const CONTACT_EMAIL = "help@omu.kr";
+
+/**
+ * 공식 연락처 — 정해지면 여기 한 곳에만 넣는다.
+ * 비워 두면(null) 푸터에는 표시하지 않고, 고객센터·개인정보처리방침에는 '문의 채널 준비 중'으로 나온다.
+ */
+export const CONTACT: { email: string | null; phone: string | null } = {
+  email: null,
+  phone: null,
+};
+export const hasContact = () => Boolean(CONTACT.email || CONTACT.phone);
 
 export function siteUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL;

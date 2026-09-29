@@ -15,8 +15,12 @@ export default function AboutPage() {
       <p className="font-display text-xs font-bold uppercase tracking-[0.14em] text-coral-deep">About</p>
       <h1 className="mt-1.5 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">곡 하나로 이어지는 음악 커뮤니티, OMU</h1>
       <p className="mt-3 text-[15px] leading-relaxed text-ink-2">
-        악보, 음악 정보, 중고 악기, 밴드 구인, 커뮤니티가 여러 사이트에 흩어져 있어 불편했던 경험에서 시작했어요. OMU 에서는 곡 하나를 중심으로 악보를 받고, 모르는 건
-        묻고, 필요한 악기는 중고로 구하고, 같이 연주할 사람까지 찾을 수 있어요.
+        악보, 음악 정보, 중고 악기, 밴드 구인, 커뮤니티가 여러 사이트에 흩어져 있어 불편했던 경험에서 시작했어요. 곡 하나를 중심으로 악보를 받고, 모르는 건 묻고,
+        필요한 악기를 구하고, 같이 연주할 사람까지 찾을 수 있는 곳을 만들고 있어요.
+      </p>
+      <p className="mt-3 text-[15px] leading-relaxed text-ink-2">
+        지금은 <strong className="text-ink">음악정보</strong>와 <strong className="text-ink">커뮤니티</strong>를 먼저 열었어요. 무료 악보·중고 장터·구인·모집은 준비가 끝나는 대로
+        차례로 열 예정이에요.
       </p>
       <ul className="mt-8 grid gap-3 sm:grid-cols-2">
         {NAV_SECTIONS.map((s) => (
@@ -29,11 +33,11 @@ export default function AboutPage() {
         ))}
       </ul>
       <p className="mt-8 text-sm text-ink-2">
-        문의는{" "}
+        문의 안내는{" "}
         <Link href="/contact" className="font-semibold text-blue hover:underline">
           고객센터
         </Link>
-        로 보내 주세요.
+        페이지를 확인해 주세요.
       </p>
     </div>
   );

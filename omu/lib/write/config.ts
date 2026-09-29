@@ -17,13 +17,15 @@ export type WriteTypeConfig = {
   minRole: Role;
   /** 로그인 없이 쓸 수 있는지 */
   guestAllowed?: boolean;
+  /** 아직 열지 않은 게시판 — 누구도 쓸 수 없다(화면·서버 액션 모두 차단). 값은 안내 문구 */
+  closed?: string;
 };
 
 export const WRITE_TYPES: WriteTypeConfig[] = [
   { key: "score", label: "악보 올리기", section: "악보공유", hint: "무료 악보 PDF 등록 · 에디터 전용", minRole: "editor" },
   { key: "article", label: "정보글 쓰기", section: "음악정보", hint: "입문·입시·공모전·장비 정보 · 에디터 전용", minRole: "editor" },
-  { key: "market", label: "중고 판매글", section: "악기", hint: "판매 · 구매 · 나눔", minRole: "user" },
-  { key: "recruit", label: "모집글", section: "구인·모집", hint: "밴드 · 세션 · 레슨 · 오디션", minRole: "user" },
+  { key: "market", label: "중고 판매글", section: "악기", hint: "판매 · 구매 · 나눔", minRole: "user", closed: "중고 장터는 준비 중이에요. 안전한 거래 기능을 갖춘 뒤 열 예정이에요." },
+  { key: "recruit", label: "모집글", section: "구인·모집", hint: "밴드 · 세션 · 레슨 · 오디션", minRole: "user", closed: "구인·모집은 준비 중이에요. 곧 밴드·세션 모집글을 올릴 수 있게 열 예정이에요." },
   { key: "community", label: "커뮤니티 글", section: "커뮤니티", hint: "자유 · 익명 · Q&A · 연주 자랑 · 창업 고민", minRole: "user", guestAllowed: true },
   { key: "score-request", label: "악보 요청", section: "악보공유", hint: "“이 곡 악보 있나요?”", minRole: "user" },
 ];
@@ -37,13 +39,20 @@ const RANK: Record<Role, number> = { user: 1, editor: 2, admin: 3 };
 /** role 이 null 이면 비회원 */
 export function canWrite(role: Role | null | undefined, type: WriteType): boolean {
   const cfg = getWriteType(type);
-  if (!cfg) return false;
+  if (!cfg || cfg.closed) return false;
   if (!role) return Boolean(cfg.guestAllowed);
   return RANK[role] >= RANK[cfg.minRole];
 }
 
+/** 아직 열지 않은 게시판이면 안내 문구 */
+export function closedReason(type: WriteType): string | null {
+  return getWriteType(type)?.closed ?? null;
+}
+
 export function denyReason(role: Role | null | undefined, type: WriteType): string | null {
   if (canWrite(role, type)) return null;
+  const closed = closedReason(type);
+  if (closed) return closed;
   if (!role) {
     return type === "market" || type === "recruit"
       ? "거래·연락이 오가는 글이라 로그인한 회원만 쓸 수 있어요. 커뮤니티 글과 댓글은 로그인 없이도 쓸 수 있어요."

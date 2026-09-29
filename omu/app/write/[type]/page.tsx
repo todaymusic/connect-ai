@@ -11,7 +11,7 @@ import { ScoreRequestForm } from "@/components/write/forms/ScoreRequestForm";
 import { GuestNotice } from "@/components/interact/GuestNotice";
 import { DemoRoleSwitcher, WriteGate } from "@/components/write/WriteChrome";
 import { first } from "@/lib/url";
-import { canWrite, denyReason, getWriteType } from "@/lib/write/config";
+import { canWrite, closedReason, denyReason, getWriteType } from "@/lib/write/config";
 import { getWriterState } from "@/lib/write/writer";
 
 export async function generateMetadata({ params }: PageProps<"/write/[type]">): Promise<Metadata> {
@@ -27,6 +27,7 @@ export default async function WriteTypePage({ params, searchParams }: PageProps<
   const state = await getWriterState();
   const role = state.writer?.role ?? null;
   const allowed = canWrite(role, cfg.key);
+  const closed = closedReason(cfg.key);
   const query = new URLSearchParams(Object.entries(sp).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : []))).toString();
   const here = `/write/${cfg.key}${query ? `?${query}` : ""}`;
   const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(new Date());
@@ -41,7 +42,7 @@ export default async function WriteTypePage({ params, searchParams }: PageProps<
       <h1 className="mt-0.5 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{cfg.label}</h1>
       <p className="mt-1 text-sm text-ink-2">{cfg.hint}</p>
 
-      {state.mode === "demo" && (
+      {state.mode === "demo" && !closed && (
         <div className="mt-6">
           <DemoRoleSwitcher current={state.demoRole} next={here} />
         </div>
@@ -55,7 +56,7 @@ export default async function WriteTypePage({ params, searchParams }: PageProps<
 
       <div className="mt-6">
         {!allowed ? (
-          <WriteGate kind={role ? "forbidden" : "signed-out"} message={denyReason(role, cfg.key) ?? ""} next={here} demo={state.mode === "demo"} />
+          <WriteGate kind={closed ? "closed" : role ? "forbidden" : "signed-out"} message={denyReason(role, cfg.key) ?? ""} next={here} demo={state.mode === "demo"} />
         ) : cfg.key === "community" ? (
           <CommunityForm mode={state.mode} guest={!role} defaults={{ category: first(sp.category), subject: first(sp.subject) }} />
         ) : cfg.key === "market" ? (

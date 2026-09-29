@@ -73,7 +73,7 @@ export function ReportsBoard({
           )}
           {preview && (
             <p className="mt-4 rounded-xl border border-coral-soft bg-coral-soft/30 px-4 py-3 text-sm leading-relaxed text-ink-2">
-              Supabase 가 연결되지 않은 미리보기예요. 아래 목록은 예시이고, 버튼은 실제로 처리하지 않아요. 이 브라우저에서 데모로 보낸 신고는 맨 아래에 따로 보여요.
+              Supabase 가 연결되지 않은 미리보기예요. 서버에 쌓인 신고는 없고, 이 브라우저에서 데모로 보낸 신고만 아래에 따로 보여요.
             </p>
           )}
           {error && <p className="mt-4 rounded-xl bg-stone px-4 py-3 text-sm text-ink-2">{error}</p>}
