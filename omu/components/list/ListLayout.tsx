@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Clock, PenLine, SearchX } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, PenLine, SearchX, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { hrefWith, type Query } from "@/lib/url";
 
@@ -204,11 +204,21 @@ export function EmptyState({ title, children }: { title: string; children?: Reac
 }
 
 /** 아직 열지 않은(콘텐츠가 없는) 게시판 — '검색 결과 없음' 대신 준비 중 안내 */
-export function ComingSoonState({ title, children, action }: { title: string; children?: ReactNode; action?: { href: string; label: string } }) {
+export function ComingSoonState({
+  title,
+  children,
+  action,
+  icon: Icon = Clock,
+}: {
+  title: string;
+  children?: ReactNode;
+  action?: { href: string; label: string };
+  icon?: LucideIcon;
+}) {
   return (
     <div className="rounded-2xl border border-dashed border-line-2 bg-card px-5 py-12 text-center">
       <span className="mx-auto flex size-11 items-center justify-center rounded-full bg-stone text-ink-2">
-        <Clock aria-hidden className="size-5" />
+        <Icon aria-hidden className="size-5" />
       </span>
       <p className="mt-3 font-bold text-ink">{title}</p>
       {children && <div className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-ink-2">{children}</div>}

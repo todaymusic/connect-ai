@@ -3,8 +3,8 @@ import { ArrowRight, BookOpen, FileMusic, Guitar, MessagesSquare, Users, type Lu
 import { SearchForm } from "../SearchForm";
 
 export type HeroStats = { freeScores: number; sellingMarket: number; waitingQuestions: number; openBands: number };
-/** 각 코너가 지금 열려 있는지 (콘텐츠가 있거나 바로 쓸 수 있으면 true) */
-export type HeroOpen = { scores: boolean; market: boolean; recruit: boolean };
+/** 각 코너에 실제 데이터가 있는지 (app/page.tsx 가 건수로 계산) */
+export type HeroOpen = { info: boolean; scores: boolean; market: boolean; recruit: boolean };
 
 export function Hero({ stats, keywords, open }: { stats: HeroStats; keywords: string[]; open: HeroOpen }) {
   // 0건은 자랑처럼 보이지 않게 숨긴다 — 실제 숫자가 있는 타일만
@@ -15,13 +15,15 @@ export function Hero({ stats, keywords, open }: { stats: HeroStats; keywords: st
     { href: "/recruit/band?open=1", label: "모집 중인 밴드", value: stats.openBands, unit: "건", accent: false },
   ].filter((t) => t.value > 0);
 
-  const corners: { icon: LucideIcon; label: string; desc: string; href: string; ready: boolean }[] = [
-    { icon: BookOpen, label: "음악정보", desc: "악기 입문·입시·공모전·연습실 정보", href: "/info", ready: true },
+  // ready 는 실제 데이터 유무. 악보·음악정보는 비어 있으면 줄 자체를 숨기고('준비 중' 표시 안 함),
+  // 장터·구인은 0건일 때 '준비 중'. 커뮤니티는 누구나 바로 쓸 수 있어 항상 이용 가능.
+  const corners: { icon: LucideIcon; label: string; desc: string; href: string; ready: boolean; hideWhenEmpty?: boolean }[] = [
+    { icon: BookOpen, label: "음악정보", desc: "악기 입문·입시·공연·연습실 정보", href: "/info", ready: open.info, hideWhenEmpty: true },
     { icon: MessagesSquare, label: "커뮤니티", desc: "가입 없이 묻고 나누기", href: "/community", ready: true },
-    { icon: FileMusic, label: "무료 악보", desc: "저작권을 확인한 악보만", href: "/score", ready: open.scores },
+    { icon: FileMusic, label: "무료 악보", desc: "저작권을 확인한 악보", href: "/score", ready: open.scores, hideWhenEmpty: true },
     { icon: Guitar, label: "중고 장터", desc: "악기·장비 직거래", href: "/gear/market", ready: open.market },
     { icon: Users, label: "구인·모집", desc: "밴드·세션·레슨 모집", href: "/recruit", ready: open.recruit },
-  ];
+  ].filter((c) => c.ready || !c.hideWhenEmpty);
   const upcoming = corners.filter((c) => !c.ready).map((c) => c.label);
 
   return (
@@ -47,7 +49,7 @@ export function Hero({ stats, keywords, open }: { stats: HeroStats; keywords: st
             함께 연주할 사람까지<span className="text-coral">.</span>
           </h1>
           <p className="mt-4 max-w-[520px] text-[15px] leading-relaxed text-ink-2 sm:text-base">
-            악기 입문·입시·공모전 같은 음악정보를 읽고, 커뮤니티에서 가입 없이 묻고 나눠 보세요.
+            {open.info ? "악기 입문·입시·공연 준비 같은 음악정보를 읽고, " : ""}커뮤니티에서 가입 없이 묻고 나눠 보세요.
             {upcoming.length > 0 && <> {upcoming.join("·")}은 차례로 열 예정이에요.</>}
           </p>
 
@@ -69,10 +71,10 @@ export function Hero({ stats, keywords, open }: { stats: HeroStats; keywords: st
 
           <div className="mt-7 flex flex-wrap gap-2.5">
             <Link
-              href="/info"
+              href={open.info ? "/info" : "/write/community"}
               className="inline-flex h-12 items-center gap-1.5 rounded-full bg-coral px-6 text-[15px] font-bold text-white transition-colors hover:bg-coral-deep"
             >
-              음악정보 보기
+              {open.info ? "음악정보 보기" : "첫 글 남기기"}
               <ArrowRight aria-hidden className="size-4" />
             </Link>
             <Link

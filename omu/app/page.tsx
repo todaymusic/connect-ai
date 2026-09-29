@@ -26,11 +26,14 @@ export const revalidate = 300;
 // 홈 섹션 순서는 작업지시서 9-2 (검색 → 배너 → 무료 악보 → 정보 → 중고 → 커뮤니티 → 구인)
 export default async function HomePage() {
   const home = await getHomeData();
-  // 콘텐츠가 없는 코너는 빈 그리드 대신 '준비 중' 안내 (허위 콘텐츠·0건 자랑 금지)
+  // 모두 실제 데이터 건수로 계산 — 글이 1건이라도 생기면 자동으로 '이용 가능'·정상 목록으로 바뀐다(하드코딩 금지)
+  //  · 악보·음악정보: 비어 있으면 섹션을 통째로 숨긴다('준비 중' 문구 없음)
+  //  · 장터·구인: 0건일 때만 '준비 중' 안내
   const open = {
+    info: home.totals.articles > 0,
     scores: home.totals.scores > 0,
-    market: !closedReason("market") && home.totals.market > 0,
-    recruit: !closedReason("recruit") && home.totals.recruits > 0,
+    market: home.totals.market > 0,
+    recruit: home.totals.recruits > 0,
   };
   const hasPosts = home.totals.posts > 0;
   const jsonLd = {
@@ -50,29 +53,31 @@ export default async function HomePage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <Hero stats={home.stats} keywords={POPULAR_KEYWORDS} open={open} />
+      <Hero
+        stats={home.stats}
+        keywords={POPULAR_KEYWORDS}
+        // 히어로 목록: 데이터가 있거나 글쓰기가 열려 있으면 '이용 가능', 둘 다 아니면 '준비 중'
+        open={{ ...open, market: open.market || !closedReason("market"), recruit: open.recruit || !closedReason("recruit") }}
+      />
       <NewsStrip />
 
       <div className="mt-14 space-y-16 sm:mt-16 sm:space-y-20">
         <CategoryShortcuts />
 
-        <Section labelledBy="free-scores-title">
-          <SectionHeader
-            id="free-scores-title"
-            eyebrow="Free Scores"
-            title="이번 주 무료 악보"
-            description={open.scores ? "가입 없이 볼 수 있는 무료 악보. 과목별로 골라보세요." : undefined}
-            href="/score"
-          />
-          {open.scores ? (
+        {open.scores && (
+          <Section labelledBy="free-scores-title">
+            <SectionHeader
+              id="free-scores-title"
+              eyebrow="Free Scores"
+              title="이번 주 무료 악보"
+              description="가입 없이 볼 수 있는 무료 악보. 과목별로 골라보세요."
+              href="/score"
+            />
             <FreeScoreTabs scores={home.scores} />
-          ) : (
-            <ComingSoonCard title="무료 악보는 준비 중이에요" action={{ href: "/score/requests", label: "악보 요청 보기" }}>
-              저작권을 확인한 악보만 올릴 예정이에요. 찾는 곡이 있다면 악보 요청을 남겨 주세요.
-            </ComingSoonCard>
-          )}
-        </Section>
+          </Section>
+        )}
 
+        {open.info && (
         <Section labelledBy="info-title">
           <SectionHeader
             id="info-title"
@@ -83,6 +88,7 @@ export default async function HomePage() {
           />
           <LatestInfo articles={home.articles} />
         </Section>
+        )}
 
         <Section labelledBy="market-title">
           <SectionHeader
@@ -95,9 +101,15 @@ export default async function HomePage() {
           {open.market ? (
             <MarketPreview items={home.market} />
           ) : (
-            <ComingSoonCard title="중고 장터는 준비 중이에요" action={{ href: "/gear", label: "장비·악기 정보 보기" }}>
-              안전하게 거래할 수 있는 기능을 갖춘 뒤 열 예정이에요.
-            </ComingSoonCard>
+            closedReason("market") ? (
+              <ComingSoonCard title="중고 장터는 준비 중이에요" action={{ href: "/gear", label: "장비·악기 정보 보기" }}>
+                안전하게 거래할 수 있는 기능을 갖춘 뒤 열 예정이에요.
+              </ComingSoonCard>
+            ) : (
+              <ComingSoonCard title="아직 올라온 매물이 없어요" action={{ href: "/write/market", label: "첫 매물 올리기" }}>
+                판매·구매·나눔 글을 올릴 수 있어요.
+              </ComingSoonCard>
+            )
           )}
         </Section>
 
@@ -122,9 +134,15 @@ export default async function HomePage() {
               <RecruitList recruits={home.recruits} />
             </>
           ) : (
-            <ComingSoonCard title="밴드·팀원 모집은 준비 중이에요" action={{ href: "/community", label: "커뮤니티 둘러보기" }}>
-              곧 밴드 멤버·세션 모집글을 올릴 수 있게 열 예정이에요.
-            </ComingSoonCard>
+            closedReason("recruit") ? (
+              <ComingSoonCard title="밴드·팀원 모집은 준비 중이에요" action={{ href: "/community", label: "커뮤니티 둘러보기" }}>
+                곧 밴드 멤버·세션 모집글을 올릴 수 있게 열 예정이에요.
+              </ComingSoonCard>
+            ) : (
+              <ComingSoonCard title="아직 올라온 모집글이 없어요" action={{ href: "/write/recruit", label: "첫 모집글 쓰기" }}>
+                밴드 멤버·세션·강사·오디션 모집글을 올릴 수 있어요.
+              </ComingSoonCard>
+            )
           )}
         </Section>
 

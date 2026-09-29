@@ -98,12 +98,47 @@ DEPLOYMENT.md        Vercel 배포 순서와 체크리스트 (Root Directory = o
 
 ## 공개 전 정리 (허위 콘텐츠 금지)
 
-- 목데이터 중 실제가 아닌 것은 비웠다: 장터 매물·구인 글·커뮤니티 글·댓글·악보·악보 요청 = 빈 배열. 정보글 15개만 남기고 조회수는 0(0이면 화면에 숨김), 작성자는 OMU 에디터 표기.
-- ⚠️ 정보글 본문(`lib/data/demo/articles.ts` 의 `demoBody`)은 아직 범용 문구 — 에디터 검수·교체 필요(특히 공모전 모음 글).
-- 콘텐츠가 없는 코너는 '준비 중'으로 보인다(홈 섹션, `/score`, `/gear/market`, `/recruit`). 커뮤니티는 '첫 글 쓰기' 안내.
-- 중고 장터·구인 글쓰기는 닫혀 있다: `lib/write/config.ts` 의 `closed` — 허브는 '준비 중' 비활성, 폼·서버 액션 모두 거부. 열 때는 `closed` 만 지우면 된다.
+- 목데이터 중 실제가 아닌 것은 비웠다: 장터 매물·구인 글·커뮤니티 글·댓글·악보·악보 요청 = 빈 배열.
+- 정보글은 일반 팁·체크리스트 10개만 남겼다(공모전 목록·입시 일정·브랜드 특징·특정 음반 추천·용어 정의 글은 제거).
+  - 조회수 0(화면에서 숨김), 작성자 OMU 에디터, 게시일 고정, 읽는 시간은 본문 길이로 계산.
+  - ⚠️ 본문(`lib/data/demo/articles.ts` 의 `demoBody`)은 아직 범용 문구 — 에디터 검수·교체 필요.
+  - ⚠️ 이 글들은 **데모 모드에서만** 보인다. Supabase 를 연결하면 `articles` 테이블의 글이 보이므로, 에디터가 다시 올려야 한다.
+- 빈 코너 표시는 **실제 데이터 건수로 자동 계산**한다(글이 1건이라도 생기면 저절로 사라짐, 하드코딩 없음).
+  - 악보·음악정보: 비어 있으면 홈 섹션·히어로 줄을 숨긴다. `/score` 는 "아직 등록된 악보가 없어요"(‘준비 중’ 문구 없음).
+  - 장터·구인: 0건이고 글쓰기가 닫혀 있으면 ‘준비 중’, 열려 있으면 "아직 올라온 글이 없어요 + 첫 글 쓰기".
+  - 커뮤니티: 글이 없으면 ‘첫 글 쓰기’ 안내.
 - 공식 연락처는 `lib/site.ts` 의 `CONTACT`(email·phone) 한 곳에 넣는다. 비어 있으면 푸터에 표시하지 않고, 고객센터·개인정보처리방침은 '문의 채널 준비 중'으로 나온다.
 - 홈 소식 띠(`components/home/NewsStrip.tsx`)·인기 검색어(`lib/data/home.ts`)는 실제 소식·집계가 생길 때까지 비워 둔다(비어 있으면 숨김).
+
+### 중고 장터·구인 글쓰기 열기 (환경변수)
+
+기본은 **닫힘**이다(허브 '준비 중' 비활성, 폼 게이트, 서버 액션 거부). 코드 수정 없이 환경변수로 연다.
+
+```
+NEXT_PUBLIC_OMU_OPEN_WRITE=market,recruit   # 둘 다 열기 (쉼표로 구분)
+NEXT_PUBLIC_OMU_OPEN_WRITE=market           # 장터만
+NEXT_PUBLIC_OMU_OPEN_WRITE=                 # 비우면 둘 다 닫힘
+```
+
+- Vercel → Project → Settings → Environment Variables 에 넣고 **Redeploy** 해야 반영된다(`NEXT_PUBLIC_` 값은 빌드 때 들어감).
+- 화면(작성 허브·폼·헤더 글쓰기 메뉴)과 서버 액션이 같은 설정(`lib/write/config.ts`)을 쓴다.
+- Supabase 를 연결한 뒤에는 DB 정책상 회원이 API 로 직접 넣는 것까지 막지는 않는다(앱 기준 차단).
+
+### Supabase 새 프로젝트 설치 (SQL 한 번에)
+
+1. SQL Editor → New query 에 **`supabase/setup-all.sql`** 전체를 붙여 넣고 Run.
+   - `schema.sql` → `migrations/20260929_write_fields.sql` → `migrations/20260930_guest_community.sql` 을 이어 붙인 파일이다.
+   - DROP 없음, 여러 번 실행해도 안전(새 DB·예전 schema.sql 을 실행한 DB 모두 두 번 실행해 확인).
+   - 원본을 고치면 `npm run db:setup-sql` 로 다시 만든다(직접 고치지 말 것).
+2. 카카오(또는 이메일)로 한 번 가입·로그인한다(가입하면 `profiles` 행이 자동으로 생긴다).
+3. 관리자로 지정한다 — SQL Editor 에서 한 줄 실행 (이메일만 바꿔서):
+
+```sql
+update public.profiles set role = 'admin' where id = (select id from auth.users where email = 'you@example.com');
+```
+
+   - 에디터는 `role = 'editor'`. 확인: `select nickname, role from public.profiles where role <> 'user';`
+   - `todaymusic2407@gmail.com` 은 이메일 인증을 마치면 자동으로 관리자가 된다(schema.sql 4-1).
 
 ## 현재 상태
 

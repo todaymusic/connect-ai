@@ -10,7 +10,7 @@ import { SCORE_INSTRUMENTS, type ScoreInstrument } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "악보 요청 게시판",
-  description: "찾는 곡의 악보를 요청해 주세요. 무료 악보를 준비할 때 참고합니다.",
+  description: "찾는 곡의 악보를 요청해 주세요. 악보를 올릴 때 참고합니다.",
   alternates: { canonical: "/score/requests" },
 };
 
@@ -23,7 +23,7 @@ export default async function ScoreRequestsPage() {
       <ListHeader
         eyebrow="Requests"
         title="악보 요청"
-        description="“이 곡 악보 있나요?” 찾는 곡을 남겨 주시면, 무료 악보를 준비할 때 참고할게요. 악보 공유는 아직 준비 중이에요."
+        description="“이 곡 악보 있나요?” 찾는 곡을 남겨 주시면 악보를 올릴 때 참고할게요."
         writeHref="/write/score-request"
         writeLabel="악보 요청하기"
       />

@@ -17,7 +17,7 @@ export function HowOmuWorks() {
           <EditorBadge />
           <h3 className="mt-3 text-base font-bold text-ink">에디터가 정리하는 정보글</h3>
           <p className="mt-1.5 text-sm leading-relaxed text-ink-2">
-            음악정보 글은 OMU 에디터가 정리해서 올리고, 에디터가 쓴 글에는 이 배지가 붙어요. 무료 악보도 에디터가 저작권을 확인한 것만 올릴 예정이에요.
+            음악정보 글은 OMU 에디터가 정리해서 올리고, 에디터가 쓴 글에는 이 배지가 붙어요. 무료 악보도 에디터가 저작권을 확인한 것만 올려요.
           </p>
         </li>
         <li className="card p-5">

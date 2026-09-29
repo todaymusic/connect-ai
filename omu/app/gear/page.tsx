@@ -111,9 +111,13 @@ export default async function GearPage() {
       ) : (
         <section aria-labelledby="market-title" className="mt-12">
           <SectionHeader id="market-title" title="중고 장터" href="/gear/market" />
-          <ComingSoonState title="중고 장터는 준비 중이에요">
-            {closed ? "안전한 거래 기능을 갖춘 뒤 열 예정이에요." : "아직 올라온 매물이 없어요."}
-          </ComingSoonState>
+          {closed ? (
+            <ComingSoonState title="중고 장터는 준비 중이에요">안전한 거래 기능을 갖춘 뒤 열 예정이에요.</ComingSoonState>
+          ) : (
+            <ComingSoonState title="아직 올라온 매물이 없어요" action={{ href: "/write/market", label: "첫 매물 올리기" }}>
+              판매·구매·나눔 글을 올릴 수 있어요.
+            </ComingSoonState>
+          )}
         </section>
       )}
     </ListShell>

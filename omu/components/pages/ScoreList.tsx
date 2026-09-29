@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FileMusic } from "lucide-react";
 import { ScoreCard } from "@/components/cards/ScoreCard";
 import { CategoryTabs, ChipFilter, ComingSoonState, EmptyState, FilterForm, ListHeader, ListShell, Pagination, ResultCount } from "@/components/list/ListLayout";
 import { listScores } from "@/lib/data/scores";
@@ -18,7 +19,7 @@ export async function ScoreList({ instrument, searchParams }: { instrument?: Sco
 
   const result = await listScores({ instrument, difficulty, genre, q, sort: sort ?? "latest", page });
   const title = instrument ? `${SCORE_INSTRUMENTS[instrument]} 악보` : "악보공유";
-  // 등록된 악보가 하나도 없으면 '검색 결과 없음' 대신 준비 중 안내 (필터는 숨김)
+  // 등록된 악보가 하나도 없으면 '검색 결과 없음' 대신 중립 안내 (필터는 숨김) — 악보가 1개라도 생기면 자동으로 정상 목록
   const comingSoon = result.total === 0 && (await listScores({ pageSize: 1 })).total === 0;
 
   return (
@@ -28,7 +29,7 @@ export async function ScoreList({ instrument, searchParams }: { instrument?: Sco
         title={title}
         description={
           comingSoon
-            ? "에디터가 확인한 무료 악보를 준비하고 있어요. 원하는 곡이 있으면 악보를 요청할 수 있어요."
+            ? "과목별 무료 악보를 모아 두는 곳이에요. 원하는 곡이 있으면 악보를 요청할 수 있어요."
             : "에디터가 정리한 무료 악보를 과목별로 찾아보세요. 원하는 곡이 없으면 악보를 요청할 수 있어요."
         }
         writeHref="/write/score-request"
@@ -46,8 +47,8 @@ export async function ScoreList({ instrument, searchParams }: { instrument?: Sco
 
       {comingSoon ? (
         <div className="mt-6">
-          <ComingSoonState title="악보 공유는 준비 중이에요" action={{ href: "/info", label: "음악정보 먼저 보기" }}>
-            저작권을 확인한 무료 악보만 올릴 예정이에요. 첫 악보가 등록되면 이곳에서 과목별로 찾아볼 수 있어요.
+          <ComingSoonState title="아직 등록된 악보가 없어요" icon={FileMusic} action={{ href: "/score/requests", label: "악보 요청 보기" }}>
+            찾는 곡이 있다면 악보 요청을 남겨 주세요.
           </ComingSoonState>
         </div>
       ) : (

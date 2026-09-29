@@ -1,5 +1,6 @@
 import { RecruitCard } from "@/components/cards/RecruitCard";
 import { CategoryTabs, ChipFilter, ComingSoonState, EmptyState, FilterForm, ListHeader, ListShell, Pagination, ResultCount } from "@/components/list/ListLayout";
+import { Users } from "lucide-react";
 import { closedReason } from "@/lib/write/config";
 import { LevelBadge } from "@/components/ui";
 import { listRecruits } from "@/lib/data/recruits";
@@ -40,9 +41,15 @@ export async function RecruitListPage({ category, searchParams }: { category?: R
       />
       {empty ? (
         <div className="mt-6">
-          <ComingSoonState title="구인·모집은 준비 중이에요" action={{ href: "/community", label: "커뮤니티 둘러보기" }}>
-            {closed ? "곧 밴드·세션 모집글을 올릴 수 있게 열 예정이에요." : "아직 올라온 모집글이 없어요."} 그전까지는 커뮤니티에서 이야기를 나눠 보세요.
-          </ComingSoonState>
+          {closed ? (
+            <ComingSoonState title="구인·모집은 준비 중이에요" action={{ href: "/community", label: "커뮤니티 둘러보기" }}>
+              곧 밴드·세션 모집글을 올릴 수 있게 열 예정이에요. 그전까지는 커뮤니티에서 이야기를 나눠 보세요.
+            </ComingSoonState>
+          ) : (
+            <ComingSoonState title="아직 올라온 모집글이 없어요" icon={Users} action={{ href: `/write/recruit${category ? `?category=${category}` : ""}`, label: "첫 모집글 쓰기" }}>
+              밴드 멤버·세션·강사·오디션 모집글을 올릴 수 있어요.
+            </ComingSoonState>
+          )}
         </div>
       ) : (
       <>

@@ -36,7 +36,8 @@
 ## 1단계: Supabase 준비
 
 1. **스키마 적용**
-   - SQL Editor에서 `omu/supabase/schema.sql` 전체를 한 번 실행한다.
+   - **새 프로젝트라면 `omu/supabase/setup-all.sql` 하나만 실행하면 된다**(아래 schema.sql + 두 마이그레이션을 이어 붙인 파일, 재실행 안전).
+   - 나눠서 실행한다면: SQL Editor에서 `omu/supabase/schema.sql` 전체를 한 번 실행한다.
    - 실행 전에 [`supabase/SCHEMA_README.md`](supabase/SCHEMA_README.md)의 위험 요소를 먼저 확인한다.
    - 이어서 `omu/supabase/migrations/20260929_write_fields.sql`을 실행한다.
      - 글쓰기 폼의 태그, 모집 역할, 마감일, 물건 상태 컬럼을 추가한다.
@@ -107,6 +108,7 @@
 | `NEXT_PUBLIC_NAVER_SITE_VERIFICATION` | 오픈 시 | — | 네이버 서치어드바이저 소유확인 |
 | `SUPABASE_SERVICE_ROLE_KEY` | ❌ 지금은 넣지 않음 | ❌ | 현재 코드에서 사용 안 함. 추후 서버 전용 기능에서만 |
 | `OMU_ADMIN_PREVIEW` | ❌ **절대 넣지 말 것** | ❌ | 개발용 관리자 목데이터 미리보기 스위치 |
+| `NEXT_PUBLIC_OMU_OPEN_WRITE` | (선택) `market,recruit` | (선택) | 중고 장터·구인 글쓰기 열기. 비우면 닫힘('준비 중'). 바꾸면 Redeploy |
 | `OMU_DATA_SOURCE` | ❌ 넣지 않음 | (선택) `demo` | `demo`면 Supabase가 있어도 목데이터·데모 글쓰기로 동작 |
 
 > `NEXT_PUBLIC_*` 값은 **빌드할 때 코드에 박힌다.** 값을 바꾸면 반드시 **Redeploy**해야 반영된다.
