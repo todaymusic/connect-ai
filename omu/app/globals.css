@@ -1,0 +1,99 @@
+@import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
+@import "tailwindcss";
+
+/* ───────── OMU 디자인 토큰 (작업지시서 7-1) ───────── */
+:root {
+  --coral: #f5623c;
+  --coral-deep: #e24824;
+  --coral-soft: #fbc7b6;
+  --blue: #2e6fd8;
+  --blue-soft: #dce9fb;
+  --blue-deep: #1b4fa8;
+  --paper: #faf9f7;
+  --card: #ffffff;
+  --stone: #f0eeea;
+  --line: #e8e5e0;
+  --line-2: #dad6cf;
+  --ink: #1e1b18;
+  --ink-2: #57514a;
+  --ink-3: #8c857b;
+  --pro-soft: #e8e1f5;
+  --pro-deep: #6b4bc4;
+
+  --shadow-card: 0 1px 2px rgba(30, 27, 24, 0.06);
+  --shadow-hover: 0 10px 24px rgba(30, 27, 24, 0.1);
+
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-coral: var(--coral);
+  --color-coral-deep: var(--coral-deep);
+  --color-coral-soft: var(--coral-soft);
+  --color-blue: var(--blue);
+  --color-blue-soft: var(--blue-soft);
+  --color-blue-deep: var(--blue-deep);
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-stone: var(--stone);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-pro-soft: var(--pro-soft);
+  --color-pro-deep: var(--pro-deep);
+
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --font-display: var(--font-space-grotesk), "Pretendard Variable", sans-serif;
+
+  --radius-card: 16px;
+  --shadow-card: var(--shadow-card);
+  --shadow-hover: var(--shadow-hover);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+/* 카드 hover: 살짝 떠오르기 (7-3) */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+a.card:hover,
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* 본문(마크다운 렌더 결과) 타이포 */
+.prose-omu {
+  line-height: 1.8;
+  font-size: 1.0625rem;
+  color: var(--ink);
+}
+.prose-omu h2 { font-size: 1.375rem; font-weight: 700; margin: 2rem 0 0.75rem; }
+.prose-omu h3 { font-size: 1.15rem; font-weight: 700; margin: 1.5rem 0 0.5rem; }
+.prose-omu p { margin: 0.9rem 0; }
+.prose-omu ul { list-style: disc; padding-left: 1.4rem; margin: 0.9rem 0; }
+.prose-omu ol { list-style: decimal; padding-left: 1.4rem; margin: 0.9rem 0; }
+.prose-omu a { color: var(--blue); text-decoration: underline; text-underline-offset: 2px; }
+.prose-omu blockquote { border-left: 3px solid var(--line-2); padding-left: 1rem; color: var(--ink-2); }
+.prose-omu strong { font-weight: 700; }
+.prose-omu img { border-radius: 12px; }
+.prose-omu code { background: var(--stone); padding: 0.1rem 0.35rem; border-radius: 6px; font-size: 0.92em; }
+
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
