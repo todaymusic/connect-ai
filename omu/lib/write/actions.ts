@@ -18,9 +18,12 @@ import {
   articlePath,
 } from "../site";
 import { getDataSource } from "../data/source";
+import { DEMO_ARTICLES } from "../data/demo/articles";
+import { DEMO_SCORES } from "../data/demo/scores";
 import { marketImageUrl } from "../data/storage";
 import { pickGuestName } from "../guest/names";
 import { GUEST_SECRET_PATTERN, clientKey, guestHashServer, memThrottle, rpcMessage, spamCheck } from "../guard/server";
+import { uniqueSlug } from "../slug";
 import { getSupabaseServerClient } from "../supabase/server";
 import { DEMO_ROLE_COOKIE, DEMO_ROLES, canWrite, denyReason, type WriteType } from "./config";
 import {
@@ -73,10 +76,29 @@ type Plan<T> = {
   path: (data: T, row: Record<string, string>) => string;
   revalidate: string[];
   preview: (data: T) => { title: string; body: string; fields: [string, string][] };
+  /**
+   * 제목으로 만든 주소(data.slug)를 저장 직전에 겹치지 않게 맞춘다(-2, -3 …).
+   * scores·articles 의 slug 는 DB 전체에서 unique 라 분류와 관계없이 확인한다.
+   */
+  uniqueSlug?: { table: "scores" | "articles"; demoTaken: () => string[] };
 };
 
+type Slugged = { slug: string };
+type ServerClient = NonNullable<Awaited<ReturnType<typeof getSupabaseServerClient>>>;
+
+/** base, base-2, base-3 … 처럼 이미 쓰인 주소 (slug 는 영문 소문자·숫자·하이픈뿐이라 그대로 패턴에 넣어도 안전) */
+function sameBase(base: string, slugs: string[]): string[] {
+  const re = new RegExp(`^${base}(-\\d+)?$`);
+  return slugs.filter((s) => re.test(s));
+}
+
+async function takenSlugs(supabase: ServerClient, table: string, base: string): Promise<string[]> {
+  const { data } = await supabase.from(table).select("slug").like("slug", `${base}%`).limit(1000);
+  return sameBase(base, ((data ?? []) as unknown as Slugged[]).map((r) => r.slug));
+}
+
 function dbErrorMessage(e: { code?: string; message: string }): string {
-  if (e.code === "23505") return "이미 같은 주소(slug)를 쓰는 글이 있어요. 주소를 바꿔 주세요.";
+  if (e.code === "23505") return "같은 제목의 글이 동시에 저장되고 있어요. 잠시 후 다시 시도해 주세요.";
   if (e.code === "42501" || /row-level security/i.test(e.message)) return "이 글을 쓸 권한이 없어요. 로그인 상태와 역할을 확인해 주세요.";
   if (e.code === "PGRST204" || e.code === "42703")
     return "DB에 새 입력 항목이 아직 없어요. 관리자는 supabase/migrations/20260929_write_fields.sql 을 적용해 주세요.";
@@ -113,6 +135,10 @@ async function run<T>(plan: Plan<T>, fd: FormData): Promise<WriteResult> {
 
   // 데모 모드: 서버에 저장하지 않고, 검증을 통과한 결과만 돌려준다(브라우저가 localStorage 에 보관)
   if (state.mode === "demo") {
+    if (plan.uniqueSlug) {
+      const d = v.data as unknown as Slugged;
+      d.slug = uniqueSlug(d.slug, sameBase(d.slug, plan.uniqueSlug.demoTaken()));
+    }
     const p = plan.preview(v.data);
     const id = `demo-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
     const tag = guest ? guestHashServer(secret, `post:${id}`) : null;
@@ -143,13 +169,27 @@ async function run<T>(plan: Plan<T>, fd: FormData): Promise<WriteResult> {
     redirect(plan.path(v.data, row as Record<string, string>));
   }
 
-  const ins = plan.insert(v.data, writer as Writer);
-  if ("error" in ins) return { status: "error", message: ins.error, values: raw };
-  const { data, error } = await supabase.from(ins.table).insert(ins.row).select(ins.select).single();
-  if (error || !data) return { status: "error", message: dbErrorMessage(error ?? { message: "" }), values: raw };
+  // 자동 주소: 저장 직전에 DB 에서 겹치는 주소를 확인하고, 그 사이 다른 글이 같은 주소를 먼저 가져가
+  // unique 제약(23505)에 걸리면 다음 번호로 두 번까지 다시 시도한다(권한상 안 보이는 초안과 겹칠 때도 같은 방식).
+  const slugged = plan.uniqueSlug ? (v.data as unknown as Slugged) : null;
+  const base = slugged?.slug ?? "";
+  const tried: string[] = [];
+  for (let attempt = 0; ; attempt++) {
+    if (slugged && plan.uniqueSlug) slugged.slug = uniqueSlug(base, [...(await takenSlugs(supabase, plan.uniqueSlug.table, base)), ...tried]);
+    const ins = plan.insert(v.data, writer as Writer);
+    if ("error" in ins) return { status: "error", message: ins.error, values: raw };
+    const { data, error } = await supabase.from(ins.table).insert(ins.row).select(ins.select).single();
+    if (error?.code === "23505" && slugged && attempt < 2) {
+      tried.push(slugged.slug);
+      continue;
+    }
+    if (error || !data) return { status: "error", message: dbErrorMessage(error ?? { message: "" }), values: raw };
 
-  plan.revalidate.forEach((p) => revalidatePath(p));
-  redirect(plan.path(v.data, data as unknown as Record<string, string>));
+    // 새 글 주소도 갱신 — 지웠던 글과 같은 주소가 다시 쓰이면 예전 ISR 페이지가 남아 있을 수 있다
+    const dest = plan.path(v.data, data as unknown as Record<string, string>);
+    [...plan.revalidate, dest.split("?")[0]].forEach((p) => revalidatePath(p));
+    redirect(dest);
+  }
 }
 
 /* ───────── 유형별 계획 ───────── */
@@ -286,16 +326,18 @@ export async function submitScore(_prev: WriteResult, fd: FormData): Promise<Wri
           artist: d.artist,
           meta_description: d.meta_description,
           file_url: d.file_path,
+          thumbnail_url: d.thumbnail_path,
           author_id: w.id,
         },
       }),
+      uniqueSlug: { table: "scores", demoTaken: () => DEMO_SCORES.map((s) => s.slug) },
       path: (d) => `/score/${d.instrument}/${d.slug}`,
       revalidate: ["/score", "/"],
       preview: (d) => ({
         title: d.title,
         body: d.meta_description,
         fields: [
-          ["주소", `/score/${d.instrument}/${d.slug}`],
+          ["주소(자동)", `/score/${d.instrument}/${d.slug}`],
           ["악기", SCORE_INSTRUMENTS[d.instrument]],
           ["난이도", DIFFICULTIES[d.difficulty]],
           ["장르", d.genre ?? "—"],
@@ -321,6 +363,7 @@ export async function submitArticle(_prev: WriteResult, fd: FormData): Promise<W
         // 발행은 관리자만(에디터가 보내도 DB 트리거가 false 로 되돌린다)
         row: { ...d, is_published: isAdmin && d.is_published, author_id: w.id },
       }),
+      uniqueSlug: { table: "articles", demoTaken: () => DEMO_ARTICLES.map((a) => a.slug) },
       path: (d) => (isAdmin && d.is_published ? articlePath(d.category, d.slug) : "/write?saved=article"),
       revalidate: ["/info", "/gear", "/"],
       preview: (d) => ({
@@ -328,7 +371,7 @@ export async function submitArticle(_prev: WriteResult, fd: FormData): Promise<W
         body: d.content,
         fields: [
           ["분류", ARTICLE_CATEGORIES[d.category]],
-          ["주소", articlePath(d.category, d.slug)],
+          ["주소(자동)", articlePath(d.category, d.slug)],
           ["작성자 표기", d.author_display === "editor" ? "OMU 에디터" : "닉네임"],
           ["발행", isAdmin && d.is_published ? "바로 발행" : "초안 (관리자 발행 대기)"],
         ],

@@ -5,6 +5,7 @@ import { SCORE_DEFAULT_PARTS } from "../site";
 import { DEFAULT_PAGE_SIZE, PROFILE_COLS, byNewest, likePattern, matches, paginate, range, toAuthor, toPaged } from "./core";
 import { DEMO_SCORE_REQUESTS, DEMO_SCORES } from "./demo/scores";
 import { publicDb } from "./source";
+import { scoreThumbnailUrl } from "./storage";
 import type { Paged, Score, ScoreRequest } from "./types";
 
 export type ScoreFilter = {
@@ -17,7 +18,7 @@ export type ScoreFilter = {
   pageSize?: number;
 };
 
-const SCORE_COLS = `id, slug, title, artist, instrument, difficulty, genre, file_url, meta_description,
+const SCORE_COLS = `id, slug, title, artist, instrument, difficulty, genre, file_url, thumbnail_url, meta_description,
   download_count, view_count, created_at, author:profiles!scores_author_id_fkey(${PROFILE_COLS})`;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,6 +37,7 @@ function mapScore(r: any): Score {
     views: r.view_count ?? 0,
     description: r.meta_description ?? "",
     fileUrl: r.file_url ?? null,
+    thumbnailUrl: scoreThumbnailUrl(r.thumbnail_url),
     author: toAuthor(r.author),
     createdAt: r.created_at,
   };

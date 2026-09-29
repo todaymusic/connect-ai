@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: PageProps<"/score/[instrument
     title,
     description: score.description,
     alternates: { canonical: `/score/${score.instrument}/${score.slug}` },
-    openGraph: { title, description: score.description, type: "article" },
+    openGraph: { title, description: score.description, type: "article", ...(score.thumbnailUrl ? { images: [score.thumbnailUrl] } : {}) },
   };
 }
 
@@ -70,6 +70,7 @@ export default async function ScoreDetailPage({ params }: PageProps<"/score/[ins
           ...(score.artist && !score.artist.startsWith("OMU") ? { composer: { "@type": "Person", name: score.artist } } : {}),
           educationalLevel: DIFFICULTIES[score.difficulty],
           encodingFormat: "application/pdf",
+          ...(score.thumbnailUrl ? { image: score.thumbnailUrl } : {}),
           datePublished: score.createdAt,
           publisher: { "@type": "Organization", name: "OMU" },
         }}
@@ -97,21 +98,39 @@ export default async function ScoreDetailPage({ params }: PageProps<"/score/[ins
       <TwoColumn
         main={
           <>
-            {/* 미리보기 — 썸네일이 없으면 오선지 자리표시 */}
-            <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl border border-line bg-card sm:aspect-[16/10]">
-              <svg aria-hidden viewBox="0 0 400 240" className="absolute inset-0 size-full">
-                {[0, 1, 2].map((staff) =>
-                  [0, 1, 2, 3, 4].map((i) => (
-                    <line key={`${staff}-${i}`} x1="30" x2="370" y1={50 + staff * 65 + i * 8} y2={50 + staff * 65 + i * 8} stroke="#1E1B18" strokeOpacity="0.12" />
-                  )),
+            {/* 미리보기 — PDF 첫 페이지 이미지(누르면 PDF 새 탭), 없으면 오선지 자리표시 */}
+            {score.thumbnailUrl ? (
+              <figure className="rounded-2xl border border-line bg-stone px-4 py-5 sm:px-8 sm:py-7">
+                {fileHref ? (
+                  <a href={fileHref} target="_blank" rel="noopener" className="group mx-auto block w-full max-w-[440px]">
+                    <ScorePreviewImage src={score.thumbnailUrl} title={score.title} />
+                    <span className="sr-only"> (PDF 전체 악보를 새 탭에서 열기)</span>
+                  </a>
+                ) : (
+                  <div className="mx-auto w-full max-w-[440px]">
+                    <ScorePreviewImage src={score.thumbnailUrl} title={score.title} />
+                  </div>
                 )}
-              </svg>
-              <div className="relative rounded-2xl bg-card/90 px-5 py-4 text-center shadow-[var(--shadow-card)]">
-                <FileText aria-hidden className="mx-auto size-7 text-ink-3" />
-                <p className="mt-2 text-sm font-semibold text-ink">악보 미리보기</p>
-                <p className="mt-0.5 text-xs text-ink-3">{fileHref ? "PDF 를 열어 전체 악보를 확인하세요" : "PDF 파일이 등록되면 미리보기가 열려요"}</p>
+                <figcaption className="mt-3 text-center text-xs text-ink-3">
+                  {fileHref ? "첫 페이지 미리보기 · 누르면 PDF 전체 악보가 새 탭에서 열려요" : "첫 페이지 미리보기"}
+                </figcaption>
+              </figure>
+            ) : (
+              <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl border border-line bg-card sm:aspect-[16/10]">
+                <svg aria-hidden viewBox="0 0 400 240" className="absolute inset-0 size-full">
+                  {[0, 1, 2].map((staff) =>
+                    [0, 1, 2, 3, 4].map((i) => (
+                      <line key={`${staff}-${i}`} x1="30" x2="370" y1={50 + staff * 65 + i * 8} y2={50 + staff * 65 + i * 8} stroke="#1E1B18" strokeOpacity="0.12" />
+                    )),
+                  )}
+                </svg>
+                <div className="relative rounded-2xl bg-card/90 px-5 py-4 text-center shadow-[var(--shadow-card)]">
+                  <FileText aria-hidden className="mx-auto size-7 text-ink-3" />
+                  <p className="mt-2 text-sm font-semibold text-ink">악보 미리보기</p>
+                  <p className="mt-0.5 text-xs text-ink-3">{fileHref ? "PDF 를 열어 전체 악보를 확인하세요" : "PDF 파일이 등록되면 미리보기가 열려요"}</p>
+                </div>
               </div>
-            </div>
+            )}
 
             <p className="mt-5 text-[15px] leading-relaxed text-ink-2">{score.description}</p>
 
@@ -227,5 +246,19 @@ export default async function ScoreDetailPage({ params }: PageProps<"/score/[ins
         </section>
       )}
     </DetailShell>
+  );
+}
+
+/** 상세 페이지 큰 미리보기 — 세로 3:4, 위쪽 기준으로 잘라 제목·첫 줄이 보이게 */
+function ScorePreviewImage({ src, title }: { src: string; title: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage 공개 주소
+    <img
+      src={src}
+      alt={`${title} 악보 첫 페이지 미리보기`}
+      loading="lazy"
+      decoding="async"
+      className="aspect-[3/4] w-full rounded-md bg-white object-cover object-top shadow-[0_4px_18px_rgba(30,27,24,0.14)] transition-transform duration-300 group-hover:-translate-y-0.5"
+    />
   );
 }
