@@ -27,6 +27,7 @@
 --    1) 확장 기능  2) 테이블  3) 인덱스  4) 함수  5) 트리거
 --    6) 테이블 권한(GRANT/REVOKE)  7) RLS 정책  8) Storage 버킷·정책
 --    9) 기존 가입자 프로필 보정 + 최초 관리자 지정
+--   10) 글쓰기 확장 컬럼 (posts.tags · recruits.positions/deadline · market_items.item_condition)
 --
 --  ※ 위험 요소·실행 전 확인 사항은 같은 폴더의 SCHEMA_README.md 참고.
 -- =====================================================================
@@ -1327,6 +1328,37 @@ update public.profiles p
    and u.email_confirmed_at is not null
    and lower(u.email) = any (public.omu_bootstrap_admin_emails())
    and p.role <> 'admin';
+
+-- =====================================================================
+-- 10) 글쓰기 확장 컬럼 (2026-09-29) — supabase/migrations/20260929_write_fields.sql 과 같은 내용
+--     새 프로젝트는 이 파일 하나로 끝난다. 이미 schema.sql 을 실행했다면 마이그레이션 파일만 실행하면 된다.
+-- =====================================================================
+alter table public.posts
+  add column if not exists tags text[] not null default '{}';
+alter table public.recruits
+  add column if not exists positions text[] not null default '{}',
+  add column if not exists deadline date;
+alter table public.market_items
+  add column if not exists item_condition text;
+
+-- CHECK 제약 (이미 있으면 건너뛴다)
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'posts_tags_limit') then
+    alter table public.posts add constraint posts_tags_limit check (cardinality(tags) <= 5);
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'recruits_positions_limit') then
+    alter table public.recruits add constraint recruits_positions_limit check (cardinality(positions) <= 5);
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'market_items_condition_check') then
+    alter table public.market_items add constraint market_items_condition_check
+      check (item_condition is null or item_condition in ('new', 'like_new', 'good', 'fair'));
+  end if;
+end
+$$;
+
+-- posts 새 컬럼 읽기 권한 (비회원·회원 모두 목록에서 태그를 볼 수 있게)
+grant select (tags) on public.posts to anon, authenticated;
 
 commit;
 

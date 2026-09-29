@@ -12,7 +12,7 @@ export function JoinBanner() {
             카카오·네이버 계정으로 간편하게 가입하세요
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-ink-2 sm:text-[15px]">
-            악보 다운로드는 가입 없이도 무료예요. 곧 열리는 글쓰기·댓글·중고거래·모집은 회원만 이용할 수 있어요.
+            악보와 글 읽기는 가입 없이도 무료예요. 글쓰기·중고거래·모집글은 회원만 올릴 수 있어요.
           </p>
           <div className="mt-6 flex flex-wrap gap-2.5">
             <Link

@@ -2,58 +2,17 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { SearchForm } from "@/components/SearchForm";
 import { Badge, Section } from "@/components/ui";
-import { MOCK_ARTICLES, MOCK_MARKET, MOCK_POPULAR, MOCK_QNA, MOCK_RECRUITS, MOCK_SCORES } from "@/lib/mock";
-import { ARTICLE_CATEGORIES, COMMUNITY_CATEGORIES, RECRUIT_CATEGORIES, SCORE_INSTRUMENTS, articlePath } from "@/lib/site";
+import { searchAll } from "@/lib/data/search";
 
 export const metadata: Metadata = {
   title: "통합 검색",
   robots: { index: false, follow: true },
 };
 
-type Hit = { href: string; title: string; group: string; meta: string };
-
-// 1차: 목데이터 제목 부분일치 검색 (DB 연동 시 각 테이블 title ILIKE 검색으로 교체)
-function searchMock(q: string): Hit[] {
-  const needle = q.toLowerCase();
-  const has = (...fields: (string | undefined)[]) => fields.some((f) => f?.toLowerCase().includes(needle));
-  return [
-    ...MOCK_SCORES.filter((s) => has(s.title, s.artist, SCORE_INSTRUMENTS[s.instrument])).map((s) => ({
-      href: `/score/${s.instrument}/${s.slug}`,
-      title: s.title,
-      group: "악보",
-      meta: `${SCORE_INSTRUMENTS[s.instrument]} · ${s.artist}`,
-    })),
-    ...MOCK_ARTICLES.filter((a) => has(a.title, a.summary)).map((a) => ({
-      href: articlePath(a.category, a.slug),
-      title: a.title,
-      group: "음악정보",
-      meta: ARTICLE_CATEGORIES[a.category],
-    })),
-    ...MOCK_MARKET.filter((m) => has(m.title)).map((m) => ({
-      href: `/gear/market/${m.id}`,
-      title: m.title,
-      group: "중고",
-      meta: `${m.region} · ${m.timeAgo}`,
-    })),
-    ...MOCK_RECRUITS.filter((r) => has(r.title, r.genre, ...r.positions)).map((r) => ({
-      href: `/recruit/${r.category}/${r.id}`,
-      title: r.title,
-      group: "구인",
-      meta: `${RECRUIT_CATEGORIES[r.category]} · ${r.region}`,
-    })),
-    ...[...MOCK_QNA, ...MOCK_POPULAR].filter((p) => has(p.title)).map((p) => ({
-      href: `/community/${p.category}/${p.id}`,
-      title: p.title,
-      group: "커뮤니티",
-      meta: COMMUNITY_CATEGORIES[p.category],
-    })),
-  ];
-}
-
 export default async function SearchPage({ searchParams }: PageProps<"/search">) {
   const { q } = await searchParams;
   const query = (Array.isArray(q) ? q[0] : q)?.trim() ?? "";
-  const hits = query ? searchMock(query) : [];
+  const hits = query ? await searchAll(query) : [];
 
   return (
     <Section className="py-10 sm:py-14">

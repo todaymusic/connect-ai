@@ -1,14 +1,14 @@
 "use client";
 
 import { useId, useState } from "react";
-import type { MockScore } from "@/lib/mock";
+import type { Score } from "@/lib/data/types";
 import { SCORE_INSTRUMENTS, type ScoreInstrument } from "@/lib/site";
-import { ScoreCard } from "./ScoreCard";
+import { ScoreCard } from "../cards/ScoreCard";
 
 type Tab = "all" | ScoreInstrument;
 
 /** 이번 주 무료 악보 — 과목별 탭 + 카드 4개 */
-export function FreeScoreTabs({ scores }: { scores: MockScore[] }) {
+export function FreeScoreTabs({ scores }: { scores: Score[] }) {
   const [tab, setTab] = useState<Tab>("all");
   const baseId = useId();
 

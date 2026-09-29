@@ -43,6 +43,17 @@ export const DIFFICULTIES = {
 } as const;
 export type Difficulty = keyof typeof DIFFICULTIES;
 
+/** 악기별 기본 파트 구성 (DB 에 파트 정보가 없을 때 화면 표시용) */
+export const SCORE_DEFAULT_PARTS: Record<ScoreInstrument, string[]> = {
+  piano: ["멜로디", "반주(양손)"],
+  guitar: ["TAB", "코드 다이어그램"],
+  vocal: ["멜로디", "가사", "호흡 표시"],
+  drum: ["드럼 악보", "카운트"],
+  bass: ["TAB", "오선보"],
+  band: ["보컬", "기타", "베이스", "드럼", "건반"],
+  chord: ["차트"],
+};
+
 export const SCORE_GENRES = ["클래식", "가요", "팝", "재즈", "락", "OST", "동요·민요", "CCM", "연습곡"] as const;
 
 /* ───────── 음악정보 (5-2) + 악기 탭의 정보 콘텐츠 ───────── */
@@ -86,6 +97,10 @@ export type TradeType = keyof typeof TRADE_TYPES;
 
 export const MARKET_STATUS = { selling: "판매중", reserved: "예약중", sold: "거래완료" } as const;
 export type MarketStatus = keyof typeof MARKET_STATUS;
+
+/** 물건 상태 (중고 판매글) */
+export const ITEM_CONDITIONS = { new: "새 상품", like_new: "거의 새것", good: "사용감 적음", fair: "사용감 있음" } as const;
+export type ItemCondition = keyof typeof ITEM_CONDITIONS;
 
 export const REGIONS = [
   "서울", "경기", "인천", "부산", "대구", "광주", "대전", "울산", "세종",

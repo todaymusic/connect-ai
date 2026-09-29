@@ -109,12 +109,5 @@ export function Section({ children, className = "", labelledBy }: { children: Re
   );
 }
 
-/* ───────── 숫자 포맷 ───────── */
-export function formatCount(n: number) {
-  if (n >= 10000) return `${(n / 10000).toFixed(1).replace(/\.0$/, "")}만`;
-  return n.toLocaleString("ko-KR");
-}
-
-export function formatPrice(n: number) {
-  return `${n.toLocaleString("ko-KR")}원`;
-}
+/* 숫자 포맷은 lib/format 한 곳에서 관리한다 */
+export { formatCount, formatPrice } from "@/lib/format";

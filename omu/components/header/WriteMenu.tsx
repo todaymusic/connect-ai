@@ -55,16 +55,18 @@ export function WriteMenu() {
               onClick={() => setOpen(false)}
               className="block rounded-xl px-3.5 py-2.5 transition-colors hover:bg-stone"
             >
-              <span className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-ink">{a.label}</span>
-                <span className="rounded-full bg-stone px-1.5 py-px text-[10px] font-bold text-ink-3">준비 중</span>
-              </span>
+              <span className="block text-sm font-semibold text-ink">{a.label}</span>
               <span className="block text-xs text-ink-3">{a.hint}</span>
             </Link>
           ))}
-          <p className="mx-1.5 mt-1 border-t border-line px-2 pb-1.5 pt-2.5 text-xs text-ink-3">
-            글쓰기는 오픈 준비 중이에요. 열리면 로그인한 회원 누구나 쓸 수 있어요.
-          </p>
+          <Link
+            href="/write"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="mx-1.5 mt-1 block border-t border-line px-2 pb-1.5 pt-2.5 text-xs font-semibold text-ink-3 hover:text-ink"
+          >
+            작성 허브 — 악보·정보글(에디터)까지 전체 보기 →
+          </Link>
         </div>
       )}
     </div>

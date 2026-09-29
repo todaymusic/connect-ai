@@ -142,7 +142,9 @@ export function MobileMenu() {
                   <p className="flex items-center gap-1.5 px-1 text-sm font-bold">
                     <PenLine aria-hidden className="size-4 text-coral" />
                     글쓰기
-                    <span className="ml-auto rounded-full bg-stone px-2 py-0.5 text-[11px] font-bold text-ink-3">준비 중</span>
+                    <Link href="/write" className="ml-auto text-xs font-semibold text-ink-3 hover:text-ink">
+                      전체 보기
+                    </Link>
                   </p>
                   <ul className="mt-2 grid grid-cols-2 gap-1.5">
                     {WRITE_ACTIONS.map((a) => (

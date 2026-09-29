@@ -44,7 +44,7 @@ export function Footer() {
             <li><Link href="/about" className="hover:text-ink">서비스 소개</Link></li>
             <li><Link href="/terms" className="hover:text-ink">이용약관</Link></li>
             <li><Link href="/privacy" className="font-semibold text-ink-2 hover:text-ink">개인정보처리방침</Link></li>
-            <li><a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-ink">고객문의</a></li>
+            <li><Link href="/contact" className="hover:text-ink">고객센터</Link></li>
           </ul>
           <p className="font-display tracking-tight">© {new Date().getFullYear()} OMU</p>
         </div>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Download } from "lucide-react";
-import type { MockScore } from "@/lib/mock";
+import type { Score } from "@/lib/data/types";
 import { DIFFICULTIES, SCORE_INSTRUMENTS, type ScoreInstrument } from "@/lib/site";
 import { Badge, FreeBadge, formatCount } from "../ui";
 
@@ -15,7 +15,7 @@ const THUMB_TONE: Record<ScoreInstrument, string> = {
 };
 
 /** 악보 카드 — 썸네일이 없을 때도 보이도록 오선지 플레이스홀더 */
-export function ScoreCard({ score }: { score: MockScore }) {
+export function ScoreCard({ score }: { score: Score }) {
   return (
     <Link href={`/score/${score.instrument}/${score.slug}`} className="card group flex h-full flex-col overflow-hidden">
       <div className={`relative aspect-[4/3] ${THUMB_TONE[score.instrument]}`}>
@@ -32,7 +32,7 @@ export function ScoreCard({ score }: { score: MockScore }) {
           <FreeBadge />
         </div>
         <span className="font-display absolute right-3 top-3 rounded-full bg-card/80 px-2 py-0.5 text-[11px] font-bold text-ink-2">
-          PDF · {score.pages}p
+          {score.pages ? `PDF · ${score.pages}p` : "PDF"}
         </span>
         <span className="font-display absolute bottom-2.5 left-3 text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45">
           {score.instrument === "chord" ? "chart" : score.instrument}

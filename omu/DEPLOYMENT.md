@@ -38,6 +38,11 @@
 1. **스키마 적용**
    - SQL Editor에서 `omu/supabase/schema.sql` 전체를 한 번 실행한다.
    - 실행 전에 [`supabase/SCHEMA_README.md`](supabase/SCHEMA_README.md)의 위험 요소를 먼저 확인한다.
+   - 이어서 `omu/supabase/migrations/20260929_write_fields.sql`을 실행한다.
+     - 글쓰기 폼의 태그, 모집 역할, 마감일, 물건 상태 컬럼을 추가한다.
+     - DROP이 없고 여러 번 실행해도 안전하다.
+     - 새로 만드는 프로젝트라면 schema.sql 10번 섹션에 같은 내용이 들어 있어서 건너뛰어도 된다. 다시 실행해도 문제는 없다.
+     - 이 파일을 실행하지 않으면 해당 항목이 들어간 글을 저장할 때 "DB에 새 입력 항목이 아직 없어요" 오류가 난다.
 2. **API 값 확보**
    - Project Settings → API에서 아래 두 값을 복사해 둔다.
      - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
@@ -96,6 +101,7 @@
 | `NEXT_PUBLIC_NAVER_SITE_VERIFICATION` | 오픈 시 | — | 네이버 서치어드바이저 소유확인 |
 | `SUPABASE_SERVICE_ROLE_KEY` | ❌ 지금은 넣지 않음 | ❌ | 현재 코드에서 사용 안 함. 추후 서버 전용 기능에서만 |
 | `OMU_ADMIN_PREVIEW` | ❌ **절대 넣지 말 것** | ❌ | 개발용 관리자 목데이터 미리보기 스위치 |
+| `OMU_DATA_SOURCE` | ❌ 넣지 않음 | (선택) `demo` | `demo`면 Supabase가 있어도 목데이터·데모 글쓰기로 동작 |
 
 > `NEXT_PUBLIC_*` 값은 **빌드할 때 코드에 박힌다.** 값을 바꾸면 반드시 **Redeploy**해야 반영된다.
 
@@ -108,6 +114,25 @@
    - 카카오 Web 사이트 도메인
    - 네이버 서비스 URL
 3. 검색엔진 소유확인 값을 넣고 Redeploy한다. 그다음 서치콘솔·서치어드바이저에서 확인을 누른다.
+4. 서치콘솔과 서치어드바이저에 `https://omu.kr/sitemap.xml`을 제출한다. `robots.txt`는 `/robots.txt`에서 자동 생성된다.
+
+## 5단계: 카카오·네이버 검수용 페이지
+
+검수 신청서에는 아래 주소를 적는다.
+
+| 항목 | 주소 |
+|---|---|
+| 서비스 이용약관 | `https://omu.kr/terms` |
+| 개인정보처리방침 | `https://omu.kr/privacy` |
+| 문의처 | `https://omu.kr/contact` |
+| 서비스 소개 | `https://omu.kr/about` |
+
+> ⚠️ 약관과 개인정보처리방침은 **초안**이다. 페이지 상단에 "확정본 아님" 표시가 있다.
+> 검수 신청 전에 아래를 실제 값으로 채운다.
+> - 사업자 정보, 개인정보 보호책임자, 시행일
+> - 수집 항목: 카카오·네이버 동의항목과 맞출 것
+>
+> 법률 검토도 받는다. 확정하면 `components/legal/LegalDoc.tsx`의 초안 안내 문구와 "(초안)" 표시를 지운다.
 
 ---
 
@@ -120,6 +145,7 @@
 
 **Supabase**
 - [ ] `schema.sql` 적용 완료. RLS 정책 42개(public 35 + storage 7)가 있다.
+- [ ] `migrations/20260929_write_fields.sql` 적용 완료. `posts.tags`, `recruits.deadline`, `market_items.item_condition` 컬럼이 있다.
 - [ ] Site URL과 Redirect URLs에 운영, Vercel, localhost 주소가 모두 있다.
 - [ ] Kakao Provider가 켜져 있다(REST API 키와 Client Secret 입력).
 - [ ] Email Confirm이 켜져 있다.
@@ -132,13 +158,17 @@
 **Vercel**
 - [ ] Root Directory가 `omu`다.
 - [ ] Production과 Preview 환경변수가 모두 입력됐다.
-- [ ] `OMU_ADMIN_PREVIEW`와 `SUPABASE_SERVICE_ROLE_KEY`가 **없다**.
+- [ ] Production에 `OMU_ADMIN_PREVIEW`, `OMU_DATA_SOURCE`, `SUPABASE_SERVICE_ROLE_KEY`가 **없다**.
 
 ## ✅ 배포 후 체크리스트
 
 **페이지**
 - [ ] `/` 홈, `/search?q=기타`, `/login`, `/signup`, `/write`가 뜬다. 모바일 폭에서도 확인한다.
-- [ ] 없는 주소(예: `/score/xyz`)에서 "준비 중" 404 페이지가 나온다.
+- [ ] `/score`, `/info`, `/gear`, `/gear/market`, `/recruit`, `/community` 목록과 상세가 뜬다.
+  - DB가 비어 있으면 "아직 글이 없어요"가 나오면 정상이다.
+- [ ] 없는 주소(예: `/score/xyz`, `/score/guitar/없는-slug`)에서 404 페이지가 나온다.
+- [ ] `/sitemap.xml`, `/robots.txt`가 운영 주소 기준으로 나온다.
+- [ ] `/terms`, `/privacy`, `/contact`가 뜬다.
 - [ ] 페이지 소스(view-source)에 `<title>`, `<meta name="description">`, `og:*`가 들어 있다.
 
 **로그인**
@@ -146,6 +176,18 @@
 - [ ] Supabase Table Editor에서 `profiles`에 새 행이 생겼는지 확인한다.
 - [ ] 로그아웃 후 헤더가 "로그인"으로 돌아온다.
 - [ ] 네이버 버튼이 "준비 중"으로 비활성화돼 있다(또는 검증 후 정상 로그인된다).
+
+**글쓰기**
+- [ ] 비로그인 상태에서 `/write/community`를 열면 "로그인이 필요해요"가 나온다.
+  - 로그인하면 폼으로 돌아온다.
+- [ ] 회원으로 커뮤니티, 장터, 구인 글을 저장할 수 있다.
+  - 저장하면 상세 페이지로 이동하고, 목록에도 보인다(최대 5분 캐시; 저장 직후에는 바로 갱신).
+- [ ] 회원으로 `/write/score`를 열면 "이 글은 쓸 수 없어요"가 나온다.
+- [ ] 에디터로 악보 PDF를 등록할 수 있다.
+  - 정보글은 초안으로만 저장된다.
+  - 관리자가 발행해야 공개된다.
+- [ ] 운영 화면에 "데모 작성 모드" 표시가 **없다**.
+  - 표시가 있다면 Supabase 환경변수가 빠졌거나 `OMU_DATA_SOURCE=demo`가 설정된 것이다.
 
 **관리자**
 - [ ] 비로그인 상태에서 `/admin` → "관리자 로그인이 필요해요"가 나온다.
@@ -167,3 +209,6 @@
 | 로그인은 되는데 관리자가 아님 | `profiles.role` 확인. 최초 관리자는 이메일 인증된 계정만 자동 승격 |
 | 환경변수를 바꿨는데 그대로 | `NEXT_PUBLIC_*`는 빌드 시 고정 → Redeploy |
 | 관리자 대시보드 숫자가 "—" | `schema.sql` 미적용 또는 관리자 권한 아님 |
+| 글 저장 시 "DB에 새 입력 항목이 아직 없어요" | `migrations/20260929_write_fields.sql` 미적용 |
+| 글 저장 시 "이 글을 쓸 권한이 없어요" | 로그인 세션 만료, 또는 `profiles.role`이 해당 글 종류에 맞지 않음(RLS) |
+| 운영에 "데모 작성 모드"가 보임 | Supabase 환경변수 누락 또는 `OMU_DATA_SOURCE=demo` → 수정 후 Redeploy |

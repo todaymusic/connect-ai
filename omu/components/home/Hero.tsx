@@ -1,14 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, FileMusic, MessageCircleQuestion, Users } from "lucide-react";
 import { SearchForm } from "../SearchForm";
-import { POPULAR_KEYWORDS, TODAY_STATS } from "@/lib/mock";
 
-const TODAY_TILES = [
-  { href: "/score", label: "이번 주 무료 악보", value: TODAY_STATS.freeScores, unit: "개" },
-  { href: "/gear/market", label: "새 중고 매물", value: TODAY_STATS.newMarket, unit: "건" },
-  { href: "/community/qna", label: "답변 기다리는 질문", value: TODAY_STATS.waitingQuestions, unit: "개", accent: true },
-  { href: "/recruit/band", label: "새 밴드·팀원 모집", value: TODAY_STATS.newRecruits, unit: "건" },
-];
+export type HeroStats = { freeScores: number; sellingMarket: number; waitingQuestions: number; openBands: number };
 
 /** 곡 하나로 이어지는 동선: 악보 → 정보 → 커뮤니티 → 구인 */
 const FLOW = [
@@ -18,7 +12,13 @@ const FLOW = [
   { icon: Users, label: "같이 칠 사람", href: "/recruit/band" },
 ];
 
-export function Hero() {
+export function Hero({ stats, keywords }: { stats: HeroStats; keywords: string[] }) {
+  const tiles = [
+    { href: "/score", label: "무료 악보", value: stats.freeScores, unit: "개", accent: false },
+    { href: "/gear/market?status=selling", label: "판매중 매물", value: stats.sellingMarket, unit: "건", accent: false },
+    { href: "/community/qna?status=open", label: "답변 기다리는 질문", value: stats.waitingQuestions, unit: "개", accent: true },
+    { href: "/recruit/band?open=1", label: "모집 중인 밴드", value: stats.openBands, unit: "건", accent: false },
+  ];
   return (
     <section aria-labelledby="hero-title" className="relative overflow-hidden">
       {/* 오선지 느낌의 은은한 배경 라인 */}
@@ -49,7 +49,7 @@ export function Hero() {
           <SearchForm size="lg" className="mt-7 max-w-[560px]" />
           <div className="mt-3 flex max-w-[560px] flex-wrap items-center gap-1.5">
             <span className="mr-1 text-xs font-semibold text-ink-3">인기 검색어</span>
-            {POPULAR_KEYWORDS.map((k) => (
+            {keywords.map((k) => (
               <Link
                 key={k}
                 href={`/search?q=${encodeURIComponent(k)}`}
@@ -84,7 +84,7 @@ export function Hero() {
             <span className="font-display text-xs text-ink-3">TODAY</span>
           </div>
           <ul className="mt-3 grid grid-cols-2 gap-2.5">
-            {TODAY_TILES.map((t) => (
+            {tiles.map((t) => (
               <li key={t.href}>
                 <Link
                   href={t.href}

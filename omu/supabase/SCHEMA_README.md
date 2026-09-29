@@ -111,3 +111,14 @@ select id, nickname, role from public.profiles where role <> 'user';
 ```
 
 대시보드 **Advisors → Security Advisor**를 한 번 실행해 보는 것도 권장한다.
+
+## 6. 추가 마이그레이션
+
+schema.sql을 이미 실행한 프로젝트에는 아래 파일을 순서대로 **덧붙여** 실행한다. 모두 DROP이 없고, 여러 번 실행해도 안전하다.
+
+| 파일 | 내용 |
+|---|---|
+| `migrations/20260929_write_fields.sql` | `posts.tags` (최대 5), `recruits.positions` (최대 5)<br>`recruits.deadline`, `market_items.item_condition`<br>`posts.tags` 읽기 권한(GRANT) |
+
+- 새 프로젝트라면 schema.sql 10번 섹션에 같은 내용이 들어 있다.
+- posts는 컬럼 단위로 읽기 권한을 준다. 그래서 posts에 새 컬럼을 추가할 때는 `grant select (컬럼) on public.posts to anon, authenticated`도 함께 실행해야 목록에 보인다.
