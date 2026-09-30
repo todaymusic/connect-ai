@@ -49,6 +49,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ko" className={spaceGrotesk.variable}>
+      <head>
+        <meta name="naver-site-verification" content="aafb09f2b3f624dadcd87f555b32e65ae9d2c41c" />
+      </head>
       <body className="flex min-h-dvh flex-col antialiased">
         <a
           href="#main"
