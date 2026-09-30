@@ -29,6 +29,7 @@ export function WriteFormShell({
   resetHref,
   guest = false,
   decorateDemo,
+  submitActions,
 }: {
   action: Action;
   /** 데모/실제 모드 (데모 안내는 페이지의 역할 선택기가 보여준다) */
@@ -41,6 +42,11 @@ export function WriteFormShell({
   guest?: boolean;
   /** 데모 결과를 보관하기 전에 브라우저에서 덧붙일 것(예: 사진 미리보기) */
   decorateDemo?: (record: DemoRecord) => DemoRecord;
+  /**
+   * 제출 버튼을 여러 개 둘 때(예: 임시저장·발행). 누른 버튼의 value 가 'intent' 로 서버에 간다.
+   * 첫 번째 버튼이 Enter 키로 제출할 때의 기본 버튼이다. 없으면 submitLabel 버튼 하나.
+   */
+  submitActions?: { value: string; label: string; primary?: boolean }[];
 }) {
   const [state, formAction, pending] = useActionState(action, INITIAL);
   const [preparing, setPreparing] = useState(false);
@@ -48,7 +54,9 @@ export function WriteFormShell({
   const alertRef = useRef<HTMLDivElement>(null);
   const [formKey, setFormKey] = useState(0);
   const [dismissedDemoId, setDismissedDemoId] = useState<string | null>(null);
+  const [pendingIntent, setPendingIntent] = useState<string | null>(null);
   const started = useStartedAt();
+  const intentRef = useRef<string | null>(null);
 
   const rawDemo = state.status === "demo" && state.record.id !== dismissedDemoId ? state.record : null;
   const demoRecord = rawDemo && decorateDemo ? decorateDemo(rawDemo) : rawDemo;
@@ -77,6 +85,13 @@ export function WriteFormShell({
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     let fd = new FormData(e.currentTarget);
+    if (submitActions) {
+      // 누른 버튼 (Enter 로 제출하면 첫 번째 버튼) — 브라우저의 submitter 를 먼저 쓰고, 없으면 클릭 기록
+      const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+      const intent = submitter?.name === "intent" ? submitter.value : (intentRef.current ?? submitActions[0].value);
+      fd.set("intent", intent);
+      setPendingIntent(intent);
+    }
     setPrepareError(null);
     fd.set("started_at", String(started.current));
     if (guest) {
@@ -175,14 +190,35 @@ export function WriteFormShell({
         <Link href={resetHref} className="inline-flex h-11 items-center rounded-full px-4 text-sm font-semibold text-ink-3 hover:text-ink">
           취소
         </Link>
-        <button
-          type="submit"
-          disabled={busy}
-          className="inline-flex h-11 items-center gap-2 rounded-full bg-coral px-6 text-sm font-bold text-white transition-colors hover:bg-coral-deep disabled:opacity-60"
-        >
-          {busy && <Loader2 aria-hidden className="size-4 animate-spin" />}
-          {preparing ? "파일 올리는 중…" : pending ? "저장 중…" : submitLabel}
-        </button>
+        {submitActions ? (
+          submitActions.map((a) => (
+            <button
+              key={a.value}
+              type="submit"
+              name="intent"
+              value={a.value}
+              disabled={busy}
+              onClick={() => {
+                intentRef.current = a.value;
+              }}
+              className={`inline-flex h-11 items-center gap-2 rounded-full px-6 text-sm font-bold transition-colors disabled:opacity-60 ${
+                a.primary ? "bg-coral text-white hover:bg-coral-deep" : "border border-line-2 bg-card text-ink hover:border-ink-3"
+              }`}
+            >
+              {busy && pendingIntent === a.value && <Loader2 aria-hidden className="size-4 animate-spin" />}
+              {busy && pendingIntent === a.value ? "저장 중…" : a.label}
+            </button>
+          ))
+        ) : (
+          <button
+            type="submit"
+            disabled={busy}
+            className="inline-flex h-11 items-center gap-2 rounded-full bg-coral px-6 text-sm font-bold text-white transition-colors hover:bg-coral-deep disabled:opacity-60"
+          >
+            {busy && <Loader2 aria-hidden className="size-4 animate-spin" />}
+            {preparing ? "파일 올리는 중…" : pending ? "저장 중…" : submitLabel}
+          </button>
+        )}
       </div>
     </form>
   );

@@ -53,12 +53,14 @@ export const NAV_SECTIONS: NavSection[] = [
 ];
 
 /**
- * 글쓰기 CTA 드롭다운 항목 — 회원이 바로 쓸 수 있는 유형 (악보·정보글은 작성 허브에서 에디터에게만 열린다)
+ * 글쓰기 CTA 드롭다운 항목 — 회원이 바로 쓸 수 있는 유형 (악보는 작성 허브에서 에디터에게만 열린다)
+ * 비로그인이 로그인 회원 전용 항목을 누르면 글쓰기 화면이 로그인 안내를 보여 준다.
  * 아직 열지 않은 게시판(lib/write/config 의 closed)은 메뉴에서 뺀다 — 작성 허브에서 '준비 중'으로만 보인다.
  */
 export const WRITE_ACTIONS = [
   { key: "community", href: "/write/community", label: "커뮤니티 글", hint: "자유·익명·Q&A·연주 자랑 · 로그인 없이" },
   { key: "market", href: "/write/market", label: "중고 판매글", hint: "판매·구매·나눔" },
   { key: "recruit", href: "/write/recruit", label: "모집글", hint: "밴드·세션·레슨·오디션" },
+  { key: "article", href: "/write/article", label: "정보글 쓰기", hint: "입문·입시·공연·연습실·장비 정보 · 로그인 회원" },
   { key: "score-request", href: "/write/score-request", label: "악보 요청", hint: "이 곡 악보 있나요?" },
 ].filter((a) => !getWriteType(a.key)?.closed);

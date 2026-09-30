@@ -5,9 +5,10 @@ import { formatCount, formatDate } from "@/lib/format";
 import { ARTICLE_CATEGORIES, DIFFICULTIES, SCORE_INSTRUMENTS, articlePath, isKey } from "@/lib/site";
 import { AdminBadge, Badge } from "../ui";
 import { AdminNav } from "./AdminNav";
+import { EditArticleLink, PublishArticleButton } from "../write/ArticleActions";
 import { DeleteContentButton } from "./ContentActions";
 
-export type ContentDone = { kind: "score" | "article"; leftovers: string[] } | null;
+export type ContentDone = { kind: "score" | "article" | "published" | "deleted"; leftovers: string[] } | null;
 
 /** /admin/content — 악보·정보글 등록 바로가기 + 최근 등록 목록(보기·삭제) */
 export function ContentBoard({
@@ -35,7 +36,7 @@ export function ContentBoard({
         <div className="min-w-0">
           {done && (
             <div role="status" className="mb-4 rounded-xl bg-blue-soft/50 px-4 py-3 text-sm font-semibold text-ink">
-              {done.kind === "score" ? "악보를 지웠어요." : "정보글을 지웠어요."}
+              {done.kind === "score" ? "악보를 지웠어요." : done.kind === "published" ? "정보글을 발행했어요. 이제 누구나 볼 수 있어요." : "정보글을 지웠어요."}
               {done.leftovers.length > 0 ? (
                 <>
                   {" "}
@@ -62,7 +63,7 @@ export function ContentBoard({
 
           <div className="grid gap-2.5 sm:grid-cols-2">
             <BigLink href="/write/score" icon={Upload} title="악보 올리기" body="PDF 를 고르면 첫 페이지 미리보기가 자동으로 만들어져요." />
-            <BigLink href="/write/article" icon={PenLine} title="정보글 쓰기" body="관리자는 바로 발행하고, 에디터가 쓴 글은 초안으로 저장돼요." />
+            <BigLink href="/write/article" icon={PenLine} title="정보글 쓰기" body="‘발행’하면 바로 공개, ‘임시저장’하면 초안으로 남아요. 관리자 글에는 OMU 에디터 배지가 붙어요." />
           </div>
 
           <section aria-labelledby="admin-scores-title" className="mt-10">
@@ -191,8 +192,9 @@ function ArticleRow({ a, preview }: { a: AdminArticleRow; preview: boolean }) {
           {a.isPublished ? (
             <ViewLink href={articlePath(a.category, a.slug)} label={`${a.title} 공개 페이지 보기`} />
           ) : (
-            <span className="inline-flex h-8 items-center px-1 text-xs text-ink-3">초안은 공개 페이지가 없어요</span>
+            !preview && <PublishArticleButton id={a.id} title={a.title} back="/admin/content" />
           )}
+          {!preview && <EditArticleLink id={a.id} />}
           <DeleteContentButton kind="article" id={a.id} title={a.title} preview={preview} />
         </div>
       </div>

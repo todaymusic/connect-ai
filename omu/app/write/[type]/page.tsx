@@ -11,6 +11,7 @@ import { ScoreRequestForm } from "@/components/write/forms/ScoreRequestForm";
 import { GuestNotice } from "@/components/interact/GuestNotice";
 import { DemoRoleSwitcher, WriteGate } from "@/components/write/WriteChrome";
 import { first } from "@/lib/url";
+import { loadArticleForEdit } from "@/lib/write/article-edit";
 import { canWrite, closedReason, denyReason, getWriteType } from "@/lib/write/config";
 import { getWriterState } from "@/lib/write/writer";
 
@@ -31,6 +32,9 @@ export default async function WriteTypePage({ params, searchParams }: PageProps<
   const query = new URLSearchParams(Object.entries(sp).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : []))).toString();
   const here = `/write/${cfg.key}${query ? `?${query}` : ""}`;
   const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(new Date());
+  // 정보글 수정 (/write/article?edit=<id>) — 작성자 본인 또는 관리자
+  const editId = cfg.key === "article" ? first(sp.edit) : undefined;
+  const editLoad = editId && allowed ? await loadArticleForEdit(editId, state.writer, state.mode) : null;
 
   return (
     <div className="mx-auto max-w-[760px] px-4 py-8 sm:px-6 sm:py-12">
@@ -39,8 +43,8 @@ export default async function WriteTypePage({ params, searchParams }: PageProps<
         작성 허브
       </Link>
       <p className="mt-4 text-xs font-semibold text-ink-3">{cfg.section}</p>
-      <h1 className="mt-0.5 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{cfg.label}</h1>
-      <p className="mt-1 text-sm text-ink-2">{cfg.hint}</p>
+      <h1 className="mt-0.5 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{editId ? "정보글 수정" : cfg.label}</h1>
+      <p className="mt-1 text-sm text-ink-2">{editId ? "제목·분류·본문·키워드를 고칠 수 있어요. 글 주소는 그대로예요." : cfg.hint}</p>
 
       {state.mode === "demo" && !closed && (
         <div className="mt-6">
@@ -67,8 +71,20 @@ export default async function WriteTypePage({ params, searchParams }: PageProps<
           <ScoreRequestForm mode={state.mode} defaults={{ instrument: first(sp.instrument) }} />
         ) : cfg.key === "score" ? (
           <ScoreForm mode={state.mode} />
+        ) : editLoad && editLoad.kind !== "ok" ? (
+          <p role="alert" className="rounded-2xl bg-stone px-4 py-6 text-center text-sm text-ink-2">
+            {editLoad.message}{" "}
+            <Link href="/my/articles" className="font-semibold text-ink underline underline-offset-2">
+              내 정보글
+            </Link>
+          </p>
         ) : (
-          <ArticleForm mode={state.mode} isAdmin={role === "admin"} defaults={{ category: first(sp.category) }} />
+          <ArticleForm
+            mode={state.mode}
+            defaults={{ category: first(sp.category) }}
+            badge={editLoad?.kind === "ok" ? editLoad.edit.authorDisplay : role === "editor" || role === "admin" ? "editor" : "member"}
+            edit={editLoad?.kind === "ok" ? editLoad.edit : undefined}
+          />
         )}
       </div>
     </div>

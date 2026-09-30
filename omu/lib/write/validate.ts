@@ -373,7 +373,11 @@ export function validateScore(raw: Raw, { requireFile }: { requireFile: boolean 
   });
 }
 
-/* ───────── 정보글 (에디터) ───────── */
+/* ───────── 정보글 (로그인 회원 누구나) ───────── */
+/**
+ * 작성자 표기(author_display)는 입력받지 않는다 — 서버가 작성자 역할로 정하고 DB 트리거가 다시 강제한다.
+ * 공개 여부는 누른 버튼(intent): 'publish' = 발행(바로 공개), 그 외 = 임시저장(초안).
+ */
 export type ArticleInput = {
   category: ArticleCategory;
   title: string;
@@ -382,7 +386,6 @@ export type ArticleInput = {
   content: string;
   keywords: string;
   youtube_url: string | null;
-  author_display: "editor" | "member";
   is_published: boolean;
 };
 export function validateArticle(raw: Raw): Validated<ArticleInput> {
@@ -399,7 +402,6 @@ export function validateArticle(raw: Raw): Validated<ArticleInput> {
   const keywords = listOf(raw, "keywords");
   if (keywords.length > 10) e.keywords = "키워드는 10개까지 적을 수 있어요.";
   const youtube_url = youtube(e, raw);
-  const display = str(raw, "author_display") === "member" ? "member" : "editor";
   return done(e, {
     category: category as ArticleCategory,
     title,
@@ -408,8 +410,7 @@ export function validateArticle(raw: Raw): Validated<ArticleInput> {
     content,
     keywords: keywords.join(", "),
     youtube_url,
-    author_display: display,
-    is_published: bool(raw, "is_published"),
+    is_published: str(raw, "intent") === "publish",
   });
 }
 

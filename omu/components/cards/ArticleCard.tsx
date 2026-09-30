@@ -36,7 +36,7 @@ export function ArticleCard({ article: a, headingLevel = "h3" }: { article: Arti
         <H className="line-clamp-2 text-base font-bold leading-snug text-ink group-hover:text-coral-deep">{a.title}</H>
         <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-ink-2">{a.summary}</p>
         <div className="mt-auto flex items-center justify-between gap-2 pt-4 text-xs text-ink-3">
-          <AuthorLabel author={a.author} display={a.authorDisplay} />
+          <AuthorLabel author={a.author} display={a.authorDisplay} unknownLabel="회원" />
           <span className="font-display flex shrink-0 items-center gap-2.5">
             {/* 조회수는 실제로 쌓인 뒤에만 보여 준다(0 은 숨김) */}
             {a.views > 0 && (

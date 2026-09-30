@@ -98,6 +98,9 @@ async function takenSlugs(supabase: ServerClient, table: string, base: string): 
 }
 
 function dbErrorMessage(e: { code?: string; message: string }): string {
+  // DB 트리거가 보낸 안내(예: 도배 제한, 발행 글 되돌리기 금지)는 그대로 보여 준다
+  const omu = e.message?.indexOf("OMU:") ?? -1;
+  if (omu >= 0) return e.message.slice(omu + 4).trim();
   if (e.code === "23505") return "같은 제목의 글이 동시에 저장되고 있어요. 잠시 후 다시 시도해 주세요.";
   if (e.code === "42501" || /row-level security/i.test(e.message)) return "이 글을 쓸 권한이 없어요. 로그인 상태와 역할을 확인해 주세요.";
   if (e.code === "PGRST204" || e.code === "42703")
@@ -351,8 +354,10 @@ export async function submitScore(_prev: WriteResult, fd: FormData): Promise<Wri
 }
 
 export async function submitArticle(_prev: WriteResult, fd: FormData): Promise<WriteResult> {
+  // 정책(2026-10-01): 로그인 회원 누구나 작성. '발행' = 바로 공개, '임시저장' = 초안(본인·관리자만 봄).
+  // 배지(author_display)는 작성자 역할로 정한다 — DB 트리거(omu_article_rules)도 같은 규칙으로 강제한다.
   const state = await getWriterState();
-  const isAdmin = state.writer?.role === "admin";
+  const staff = state.writer?.role === "editor" || state.writer?.role === "admin";
   return run(
     {
       type: "article",
@@ -360,25 +365,71 @@ export async function submitArticle(_prev: WriteResult, fd: FormData): Promise<W
       insert: (d, w) => ({
         table: "articles",
         select: "id, slug",
-        // 발행은 관리자만(에디터가 보내도 DB 트리거가 false 로 되돌린다)
-        row: { ...d, is_published: isAdmin && d.is_published, author_id: w.id },
+        row: { ...d, author_id: w.id, author_display: w.role === "user" ? "member" : "editor" },
       }),
       uniqueSlug: { table: "articles", demoTaken: () => DEMO_ARTICLES.map((a) => a.slug) },
-      path: (d) => (isAdmin && d.is_published ? articlePath(d.category, d.slug) : "/write?saved=article"),
-      revalidate: ["/info", "/gear", "/"],
+      path: (d) => (d.is_published ? articlePath(d.category, d.slug) : "/my/articles?saved=draft"),
+      revalidate: ["/info", "/gear", "/", "/sitemap.xml"],
       preview: (d) => ({
         title: d.title,
         body: d.content,
         fields: [
           ["분류", ARTICLE_CATEGORIES[d.category]],
           ["주소(자동)", articlePath(d.category, d.slug)],
-          ["작성자 표기", d.author_display === "editor" ? "OMU 에디터" : "닉네임"],
-          ["발행", isAdmin && d.is_published ? "바로 발행" : "초안 (관리자 발행 대기)"],
+          ["작성자 표기", staff ? "OMU 에디터" : "내 닉네임"],
+          ["공개", d.is_published ? "발행 (바로 공개)" : "임시저장 (초안 — 나와 관리자만 봄)"],
         ],
       }),
     },
     fd,
   );
+}
+
+/**
+ * 정보글 수정 — 작성자 본인 또는 관리자 (RLS: omu_articles_update_*, 트리거가 작성자·배지·발행 시각을 지킨다).
+ * 공개 글은 공개 그대로 수정된다(초안으로 되돌리기 없음). 초안은 '임시저장'이면 초안 유지, '발행'이면 공개.
+ * 주소(slug)는 바꾸지 않는다 — 이미 공유된 링크가 깨지지 않게. 분류를 바꾸면 주소 앞부분만 바뀐다.
+ */
+export async function submitArticleEdit(_prev: WriteResult, fd: FormData): Promise<WriteResult> {
+  const raw = formToRaw(fd);
+  const id = raw.edit_id ?? "";
+  const state = await getWriterState();
+  const writer = state.writer;
+  if (!writer) return { status: "error", message: "로그인한 회원만 수정할 수 있어요.", values: raw };
+  if (state.mode === "demo") return { status: "error", message: "데모 모드에서는 저장된 글이 없어 수정할 수 없어요.", values: raw };
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return { status: "error", message: "수정할 글을 찾을 수 없어요.", values: raw };
+  if (raw.website) return { status: "error", message: spamCheck({ website: raw.website }) ?? "저장하지 못했어요.", values: raw };
+
+  const v = validateArticle(raw);
+  if (!v.ok) return { status: "error", message: "입력한 내용을 확인해 주세요.", fieldErrors: v.errors, values: raw };
+
+  const supabase = await getSupabaseServerClient();
+  if (!supabase) return { status: "error", message: "로그인 서버에 연결하지 못했어요.", values: raw };
+  const { data: before } = await supabase.from("articles").select("id, author_id, category, slug, is_published").eq("id", id).maybeSingle();
+  if (!before) return { status: "error", message: "수정할 글을 찾을 수 없어요.", values: raw };
+  if (before.author_id !== writer.id && writer.role !== "admin") return { status: "error", message: "본인이 쓴 글만 수정할 수 있어요.", values: raw };
+
+  const d = v.data;
+  const isPublished = before.is_published || d.is_published; // 공개 글은 공개 유지
+  const { data: after, error } = await supabase
+    .from("articles")
+    .update({ category: d.category, title: d.title, meta_description: d.meta_description, content: d.content, keywords: d.keywords, youtube_url: d.youtube_url, is_published: isPublished })
+    .eq("id", id)
+    .select("category, slug, is_published")
+    .maybeSingle();
+  if (error || !after) return { status: "error", message: error ? dbErrorMessage(error) : "이 글을 수정할 권한이 없어요.", values: raw };
+
+  revalidateArticle(before.category, before.slug);
+  revalidateArticle(after.category, after.slug);
+  redirect(after.is_published ? articlePath(after.category, after.slug) : "/my/articles?saved=draft");
+}
+
+/** 정보글 상세·목록·홈·사이트맵 캐시 갱신 */
+function revalidateArticle(category: string, slug: string) {
+  const path = articlePath(category, slug);
+  revalidatePath(path);
+  revalidatePath(path.replace(/\/[^/]+$/, ""));
+  ["/info", "/gear", "/", "/sitemap.xml", "/my/articles", "/admin/content"].forEach((p) => revalidatePath(p));
 }
 
 /* ───────── 데모 역할 바꾸기 (Supabase 미연결일 때만) ───────── */

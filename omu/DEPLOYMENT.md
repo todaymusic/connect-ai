@@ -48,6 +48,10 @@
      - 비회원 글·댓글·신고 RPC, 삭제(숨김) 컬럼, 도배 제한 기록 테이블을 추가한다.
      - DROP이 없고 여러 번 실행해도 안전하다. 기존 조회 정책 4개는 `ALTER POLICY`로 "숨김 처리된 글 제외" 조건만 바뀐다.
      - `posts`·`comments`의 `author_id NOT NULL` 제약은 원래 없으므로 건드리지 않는다.
+   - 마지막으로 `omu/supabase/migrations/20261001_member_articles.sql`을 실행한다.
+     - 로그인 회원 누구나 정보글 작성·발행, 배지는 작성자 역할로 DB 가 강제, 발행 → 초안 되돌리기 금지, 일반 회원 1시간 10건 제한.
+     - DROP 없음, 재실행 안전. 정책 3개는 `ALTER POLICY` 로 조건만 바뀌고, `omu_guard_row` 가 갱신되며 트리거 `omu_20_article_rules` 가 추가된다.
+     - ⚠️ 20260930 을 나중에 다시 실행했다면 이 파일도 다시 실행한다(가드 함수가 예전 판으로 돌아가므로).
      - 새 프로젝트라면 schema.sql 11번 섹션에 같은 내용이 있다.
      - 적용 전에는 비회원 쓰기·댓글·신고에서 "DB 업데이트가 필요해요" 안내가 나온다(목록·상세는 정상).
 2. **API 값 확보**
@@ -159,6 +163,8 @@
 - [ ] `migrations/20260929_write_fields.sql` 적용 완료. `posts.tags`, `recruits.deadline`, `market_items.item_condition` 컬럼이 있다.
 - [ ] `migrations/20260930_guest_community.sql` 적용 완료.
   - `select proname from pg_proc where proname like 'omu\_%';` 결과에 `omu_guest_create_post`, `omu_create_comment`, `omu_report`가 있다.
+- [ ] `migrations/20261001_member_articles.sql` 적용 완료.
+  - `select tgname from pg_trigger where tgrelid = 'public.articles'::regclass and not tgisinternal;` 결과에 `omu_20_article_rules` 가 있다.
 - [ ] Storage에 `market` 버킷이 있다(schema.sql 8번). 장터 사진이 여기에 올라간다.
 - [ ] Site URL과 Redirect URLs에 운영, Vercel, localhost 주소가 모두 있다.
 - [ ] Kakao Provider가 켜져 있다(REST API 키와 Client Secret 입력).
@@ -201,8 +207,8 @@
 - [ ] 에디터로 악보 PDF를 등록할 수 있다.
   - 폼에 주소(slug) 칸이 없고, PDF 를 고르면 첫 페이지 미리보기가 폼에 보인다.
   - 등록 후 `/score` 카드와 상세 페이지에 첫 페이지 이미지가 나온다(Storage `thumbnails/scores/<악기>/`). 상세의 이미지를 누르면 PDF 가 새 탭에서 열린다.
-  - 정보글은 초안으로만 저장된다.
-  - 관리자가 발행해야 공개된다.
+- [ ] 정보글: 로그인 회원 누구나 ‘발행’(바로 공개) 또는 ‘임시저장’(초안)할 수 있다. 에디터·관리자 글에는 OMU 에디터 배지, 회원 글에는 닉네임이 붙는다.
+  - 공개 글은 초안으로 되돌릴 수 없다(수정·삭제만). 상세 페이지의 수정·삭제 버튼은 작성자·관리자에게만 보인다.
 - [ ] 로그아웃 상태에서 `/write/community`에 "로그인 없이 바로 쓸 수 있어요"가 나온다.
   - 글을 쓰면 ‘새벽 기타리스트’ 같은 이름으로 저장되고, 같은 브라우저에서만 수정·삭제 버튼이 보인다.
 - [ ] 로그아웃 상태에서 댓글을 달면 같은 글 안에서는 같은 이름으로 보인다.
@@ -216,7 +222,8 @@
 - [ ] 일반 회원으로 `/admin` → "접근 권한이 없어요"가 나온다.
 - [ ] 관리자(`todaymusic2407@gmail.com` 또는 SQL로 지정한 계정)로 `/admin` → 대시보드 카드가 실제 숫자로 나온다. "미리보기" 배지가 없어야 한다.
 - [ ] `/admin/content` 에 최근 악보·정보글(초안 포함)이 보이고, ‘삭제’ → 확인 후 목록·공개 페이지에서 사라진다. 악보는 Storage 의 PDF·미리보기 파일도 함께 지워진다.
-- [ ] 관리자·에디터로 `/score` 에 ‘악보 올리기’, `/info` 에 ‘정보글 쓰기’ 버튼이 보이고, 로그아웃·일반 회원에게는 보이지 않는다.
+- [ ] 관리자·에디터로 `/score` 에 ‘악보 올리기’가 보이고 일반 회원·로그아웃에게는 안 보인다. `/info` 의 ‘정보글 쓰기’는 로그인 회원 모두에게 보이고 로그아웃 상태에서는 안 보인다.
+- [ ] 일반 회원으로 정보글 ‘발행’ → 목록에 닉네임으로 보인다. ‘임시저장’ → `/my/articles` 에서만 보이고 ‘발행’하면 공개된다.
 - [ ] 대시보드 "배포 상태"에 환경 production, 커밋 해시, Supabase 연결됨이 표시된다.
 
 **보안**

@@ -1,8 +1,9 @@
 // 글쓰기 유형과 권한 — schema.sql 의 RLS 정책·RPC 와 같은 기준이다.
 //   비회원(로그인 안 함): 커뮤니티 글 (검증된 RPC omu_guest_create_post 로만) — 댓글·신고는 lib/interact
-//   회원(user) 이상: 커뮤니티 · 중고 장터 · 구인·모집 · 악보 요청
+//   회원(user) 이상: 커뮤니티 · 중고 장터 · 구인·모집 · 악보 요청 · 정보글(음악정보 모든 분류)
 //     (장터·구인은 거래·연락 책임이 있어 로그인 회원만)
-//   에디터(editor)·관리자(admin): 악보 · 정보글 (+ 위 전부)
+//     정보글 배지: 작성자 역할이 에디터·관리자면 'OMU 에디터', 그 외 회원 닉네임 — DB 트리거(omu_article_rules)가 강제
+//   에디터(editor)·관리자(admin): 악보 (+ 위 전부)
 // 화면 가드일 뿐이고, 실제 저장 권한은 DB 의 RLS 가 최종 판정한다.
 import type { Role } from "../site";
 
@@ -45,7 +46,7 @@ const gate = (key: WriteType) => (GATED[key] && !OPENED.has(key) ? GATED[key] : 
 
 export const WRITE_TYPES: WriteTypeConfig[] = [
   { key: "score", label: "악보 올리기", section: "악보공유", hint: "무료 악보 PDF 등록 · 에디터 전용", minRole: "editor" },
-  { key: "article", label: "정보글 쓰기", section: "음악정보", hint: "입문·입시·공모전·장비 정보 · 에디터 전용", minRole: "editor" },
+  { key: "article", label: "정보글 쓰기", section: "음악정보", hint: "입문·입시·공연·연습실·장비 정보 · 로그인한 회원 누구나", minRole: "user" },
   { key: "market", label: "중고 판매글", section: "악기", hint: "판매 · 구매 · 나눔", minRole: "user", closed: gate("market") },
   { key: "recruit", label: "모집글", section: "구인·모집", hint: "밴드 · 세션 · 레슨 · 오디션", minRole: "user", closed: gate("recruit") },
   { key: "community", label: "커뮤니티 글", section: "커뮤니티", hint: "자유 · 익명 · Q&A · 연주 자랑 · 창업 고민", minRole: "user", guestAllowed: true },
@@ -80,7 +81,7 @@ export function denyReason(role: Role | null | undefined, type: WriteType): stri
       ? "거래·연락이 오가는 글이라 로그인한 회원만 쓸 수 있어요. 커뮤니티 글과 댓글은 로그인 없이도 쓸 수 있어요."
       : "로그인한 회원만 쓸 수 있어요. 커뮤니티 글과 댓글은 로그인 없이도 쓸 수 있어요.";
   }
-  return "악보와 정보글은 OMU 에디터·관리자만 올릴 수 있어요. 원하는 악보가 있다면 ‘악보 요청’을 남겨 주세요.";
+  return "악보는 OMU 에디터·관리자만 올릴 수 있어요. 원하는 악보가 있다면 ‘악보 요청’을 남겨 주세요.";
 }
 
 /** 데모 모드 역할 쿠키 */

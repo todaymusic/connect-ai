@@ -65,7 +65,7 @@ export function WriteMenu() {
             onClick={() => setOpen(false)}
             className="mx-1.5 mt-1 block border-t border-line px-2 pb-1.5 pt-2.5 text-xs font-semibold text-ink-3 hover:text-ink"
           >
-            작성 허브 — 악보·정보글(에디터)까지 전체 보기 →
+            작성 허브 — 악보(에디터)까지 전체 보기 →
           </Link>
         </div>
       )}

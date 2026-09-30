@@ -1,6 +1,6 @@
 // supabase/setup-all.sql 만들기 — 새 Supabase 프로젝트 SQL Editor 에 한 번에 붙여 넣는 단일 파일
-//   schema.sql → migrations/20260929_write_fields.sql → migrations/20260930_guest_community.sql 순서로 이어 붙인다.
-//   (schema.sql 에도 10·11번 섹션으로 같은 내용이 들어 있어 겹치지만, 모두 IF NOT EXISTS / CREATE OR REPLACE 라 안전하다.
+//   schema.sql → migrations/20260929_write_fields.sql → 20260930_guest_community.sql → 20261001_member_articles.sql 순서로 이어 붙인다.
+//   (schema.sql 에도 10·11·12번 섹션으로 같은 내용이 들어 있어 겹치지만, 모두 IF NOT EXISTS / CREATE OR REPLACE 라 안전하다.
 //    예전 schema.sql 만 실행해 둔 프로젝트에 이 파일을 실행해도 된다.)
 // 사용: npm run db:setup-sql   (schema.sql 이나 마이그레이션을 고친 뒤 다시 실행)
 import { readFileSync, writeFileSync } from "node:fs";
@@ -8,7 +8,12 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "supabase");
-const parts = ["schema.sql", "migrations/20260929_write_fields.sql", "migrations/20260930_guest_community.sql"];
+const parts = [
+  "schema.sql",
+  "migrations/20260929_write_fields.sql",
+  "migrations/20260930_guest_community.sql",
+  "migrations/20261001_member_articles.sql",
+];
 
 const header = `-- =====================================================================
 --  OMU — Supabase 전체 설치 SQL (단일 파일, 자동 생성: npm run db:setup-sql)
