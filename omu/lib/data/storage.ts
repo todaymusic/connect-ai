@@ -13,9 +13,28 @@ function publicObjectUrl(bucket: PublicBucket, path: string | null | undefined):
   if (/^https?:\/\//.test(path)) return path;
   const env = getSupabasePublicEnv();
   if (!env) return null;
-  const clean = path.replace(/^\/+/, "").replace(new RegExp(`^${bucket}/`), "");
+  const clean = storageObjectPath(bucket, path);
   if (!clean) return null;
   return `${env.url}/storage/v1/object/public/${bucket}/${clean.split("/").map(encodeURIComponent).join("/")}`;
+}
+
+/**
+ * DB 에 저장된 값(버킷 상대 경로 또는 예전 공개 주소) → 버킷 안의 파일 경로. 파일을 지울 때 쓴다.
+ * 이 버킷의 공개 주소가 아닌 외부 주소면 null (지우지 않는다).
+ */
+export function storageObjectPath(bucket: PublicBucket, value: string | null | undefined): string | null {
+  if (!value) return null;
+  if (/^https?:\/\//.test(value)) {
+    const marker = `/storage/v1/object/public/${bucket}/`;
+    const at = value.indexOf(marker);
+    if (at === -1) return null;
+    try {
+      return decodeURIComponent(value.slice(at + marker.length).split("?")[0]) || null;
+    } catch {
+      return null;
+    }
+  }
+  return value.replace(/^\/+/, "").replace(new RegExp(`^${bucket}/`), "") || null;
 }
 
 /** 악보 PDF 공개 주소 (scores 버킷). 없으면 null → 다운로드 '준비 중' */

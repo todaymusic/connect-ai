@@ -6,6 +6,10 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export type ClientUser = { id: string; nickname: string; role: Role; avatarUrl: string | null };
 
+type ProfileRow = { nickname: string | null; role: string | null; avatar_url: string | null } | null;
+/** 한 화면에서 이 훅을 여러 곳(헤더·모바일 메뉴·에디터용 버튼)이 써도 프로필은 사용자당 한 번만 조회한다 */
+const profileRequests = new Map<string, Promise<ProfileRow>>();
+
 /**
  * 헤더용 현재 사용자 (클라이언트).
  * 페이지를 정적으로 유지하려고 서버가 아닌 브라우저에서 세션을 확인한다.
@@ -25,11 +29,18 @@ export function useCurrentUser(): ClientUser | null {
         if (!cancelled) setUser(null);
         return;
       }
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id, nickname, role, avatar_url")
-        .eq("id", userId)
-        .maybeSingle();
+      let request = profileRequests.get(userId);
+      if (!request) {
+        request = Promise.resolve(
+          supabase.from("profiles").select("nickname, role, avatar_url").eq("id", userId).maybeSingle(),
+        ).then(({ data, error }) => {
+          if (error) profileRequests.delete(userId); // 일시적인 오류는 다음 번에 다시 조회
+          return (data as ProfileRow) ?? null;
+        });
+        profileRequests.set(userId, request);
+        request.catch(() => profileRequests.delete(userId));
+      }
+      const profile = await request.catch(() => null);
       if (cancelled) return;
       setUser({
         id: userId,
