@@ -5,6 +5,7 @@ import { ArticleCard } from "@/components/cards/ArticleCard";
 import { AuthorLabel } from "@/components/detail/AuthorLabel";
 import { Breadcrumbs, CommentsSection, DetailShell, JsonLd, ReportButton, SimpleMarkdown, YouTubeEmbed } from "@/components/detail/DetailParts";
 import { Badge } from "@/components/ui";
+import { ArticleOwnerActions } from "@/components/write/ArticleActions";
 import { getArticle, listRelatedArticles } from "@/lib/data/articles";
 import { listComments } from "@/lib/data/posts";
 import type { Article } from "@/lib/data/types";
@@ -28,7 +29,7 @@ export async function ArticleDetail({ article: a }: { article: Article }) {
   const isGear = a.category === "equipment" || a.category === "instrument";
   const sectionHref = isGear ? "/gear" : "/info";
   const url = `${siteUrl()}${articlePath(a.category, a.slug)}`;
-  const authorName = a.authorDisplay === "editor" ? EDITOR_DISPLAY_NAME : (a.author?.nickname ?? "OMU");
+  const authorName = a.authorDisplay === "editor" ? EDITOR_DISPLAY_NAME : a.author?.nickname?.trim() || "OMU 회원";
 
   return (
     <DetailShell>
@@ -64,7 +65,7 @@ export async function ArticleDetail({ article: a }: { article: Article }) {
           <h1 className="mt-3 text-[26px] font-extrabold leading-snug tracking-tight text-ink sm:text-[32px]">{a.title}</h1>
           <p className="mt-2 text-[15px] leading-relaxed text-ink-2">{a.summary}</p>
           <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-ink-3">
-            <AuthorLabel author={a.author} display={a.authorDisplay} />
+            <AuthorLabel author={a.author} display={a.authorDisplay} unknownLabel="회원" />
             <time dateTime={a.publishedAt}>{formatDate(a.publishedAt)}</time>
             {a.views > 0 && (
               <span className="font-display inline-flex items-center gap-1">
@@ -77,6 +78,8 @@ export async function ArticleDetail({ article: a }: { article: Article }) {
               {a.readMinutes}분 분량
             </span>
           </div>
+          {/* 작성자 본인·관리자에게만 (브라우저에서 확인 — 페이지는 ISR 캐시 그대로) */}
+          <ArticleOwnerActions id={a.id} title={a.title} authorId={a.author?.id ?? null} />
         </header>
 
         <div className="mt-6">

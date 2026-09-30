@@ -23,7 +23,8 @@ export default async function AdminContentPage({ searchParams }: PageProps<"/adm
   const sp = await searchParams;
   const kind = first(sp.done);
   const left = ([] as string[]).concat(sp.left ?? []).filter((p) => LEFTOVER.test(p)).slice(0, 4);
-  const done: ContentDone = kind === "score" || kind === "article" ? { kind, leftovers: left } : null;
+  const done: ContentDone =
+    kind === "score" || kind === "article" || kind === "published" || kind === "deleted" ? { kind, leftovers: kind === "score" ? left : [] } : null;
 
   const [content, openReports] = await Promise.all([listAdminContent(access), countOpenReports(access)]);
   return <ContentBoard content={content} preview={access.kind === "preview"} openReports={openReports} done={done} />;

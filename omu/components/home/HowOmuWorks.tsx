@@ -15,9 +15,9 @@ export function HowOmuWorks() {
       <ul className="grid gap-3 md:grid-cols-3">
         <li className="card p-5">
           <EditorBadge />
-          <h3 className="mt-3 text-base font-bold text-ink">에디터가 정리하는 정보글</h3>
+          <h3 className="mt-3 text-base font-bold text-ink">배지로 구분하는 정보글</h3>
           <p className="mt-1.5 text-sm leading-relaxed text-ink-2">
-            음악정보 글은 OMU 에디터가 정리해서 올리고, 에디터가 쓴 글에는 이 배지가 붙어요. 무료 악보도 에디터가 저작권을 확인한 것만 올려요.
+            음악정보 글은 회원 누구나 쓸 수 있어요. OMU 에디터가 쓴 글에는 이 배지가, 회원이 쓴 글에는 닉네임이 붙어요. 무료 악보는 에디터가 저작권을 확인한 것만 올려요.
           </p>
         </li>
         <li className="card p-5">

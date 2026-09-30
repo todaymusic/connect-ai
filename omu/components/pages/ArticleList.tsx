@@ -3,7 +3,7 @@ import { CategoryTabs, EmptyState, FilterForm, ListHeader, ListShell, Pagination
 import { listArticles } from "@/lib/data/articles";
 import { ARTICLE_CATEGORIES, GEAR_ARTICLE_CATEGORIES, INFO_CATEGORIES, type ArticleCategory } from "@/lib/site";
 import { first, pageParam, type Query, type SearchParams } from "@/lib/url";
-import { StaffWriteLink } from "@/components/auth/StaffWriteLink";
+import { RoleWriteLink } from "@/components/auth/RoleWriteLink";
 
 type Section = "info" | "gear";
 
@@ -55,8 +55,8 @@ export async function ArticleList({
         eyebrow={cfg.eyebrow}
         title={category ? ARTICLE_CATEGORIES[category] : cfg.title}
         description={cfg.description}
-        // 정보글은 에디터·관리자만 쓸 수 있어서, 그 사람들에게만 보인다(방문자에게는 권한 없음 안내로 가는 버튼이었음)
-        actions={<StaffWriteLink type="article" href={`/write/article${category ? `?category=${category}` : ""}`} label="정보글 쓰기" />}
+        // 정보글은 로그인한 회원 누구나 쓸 수 있어서, 로그인한 사람에게만 보인다(비로그인은 버튼 없음)
+        actions={<RoleWriteLink type="article" href={`/write/article${category ? `?category=${category}` : ""}`} label="정보글 쓰기" />}
       />
       <CategoryTabs label="분류" current={category ?? "all"} items={tabs} />
       <div className="mt-5 rounded-2xl border border-line bg-card p-3 sm:p-4">

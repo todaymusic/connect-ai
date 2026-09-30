@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LogOut, Menu, PenLine, ShieldCheck, X } from "lucide-react";
+import { FileText, LogOut, Menu, PenLine, ShieldCheck, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
@@ -77,17 +77,22 @@ export function MobileMenu() {
                   <div className="mt-4 rounded-2xl border border-line bg-card p-3">
                     <p className="truncate px-1 text-sm font-bold text-ink">{user.nickname} 님</p>
                     <div className="mt-2 grid grid-cols-2 gap-2">
-                      {user.role === "admin" ? (
+                      {user.role === "admin" && (
                         <Link
                           href="/admin"
-                          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-ink text-sm font-semibold text-paper"
+                          className="col-span-2 inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-ink text-sm font-semibold text-paper"
                         >
                           <ShieldCheck aria-hidden className="size-4" />
                           관리자
                         </Link>
-                      ) : (
-                        <span />
                       )}
+                      <Link
+                        href="/my/articles"
+                        className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-line-2 bg-card text-sm font-semibold"
+                      >
+                        <FileText aria-hidden className="size-4" />
+                        내 정보글
+                      </Link>
                       <form action="/auth/signout" method="post">
                         <button
                           type="submit"

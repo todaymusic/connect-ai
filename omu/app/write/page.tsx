@@ -46,7 +46,11 @@ export default async function WriteHubPage({ searchParams }: PageProps<"/write">
       {saved === "article" && (
         <p role="status" className="mt-5 flex items-center gap-2 rounded-xl bg-blue-soft/50 px-4 py-3 text-sm text-ink-2">
           <CheckCircle2 aria-hidden className="size-4 text-blue" />
-          정보글을 초안으로 저장했어요. 관리자가 발행하면 공개돼요.
+          정보글을 임시저장했어요.{" "}
+          <Link href="/my/articles" className="font-semibold text-ink underline underline-offset-2">
+            내 정보글
+          </Link>
+          에서 발행할 수 있어요.
         </p>
       )}
 
@@ -115,7 +119,7 @@ export default async function WriteHubPage({ searchParams }: PageProps<"/write">
       </ul>
 
       <p className="mt-6 rounded-xl bg-stone px-4 py-3 text-xs leading-relaxed text-ink-2">
-        악보와 정보글은 에디터가 확인해 올려요. 찾는 악보가 없다면 ‘악보 요청’을 남겨 주세요. 글을 쓰기 전에{" "}
+        악보는 에디터가 저작권을 확인해 올리고, 정보글은 로그인한 회원 누구나 쓸 수 있어요. 찾는 악보가 없다면 ‘악보 요청’을 남겨 주세요. 글을 쓰기 전에{" "}
         <Link href="/terms" className="font-semibold underline underline-offset-2">
           이용약관
         </Link>

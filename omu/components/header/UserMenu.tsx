@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { LogOut, ShieldCheck, UserRound } from "lucide-react";
+import { FileText, LogOut, ShieldCheck, UserRound } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { ROLES } from "@/lib/site";
 import { useCurrentUser } from "../auth/useCurrentUser";
 
-/** 헤더 우측: 비로그인 → 로그인 버튼 / 로그인 → 닉네임 메뉴(관리자 링크·로그아웃) */
+/** 헤더 우측: 비로그인 → 로그인 버튼 / 로그인 → 닉네임 메뉴(내 정보글·관리자 링크·로그아웃) */
 export function UserMenu() {
   const user = useCurrentUser();
   const pathname = usePathname();
@@ -68,6 +68,15 @@ export function UserMenu() {
             <p className="truncate text-sm font-bold text-ink">{user.nickname}</p>
             <p className="text-xs text-ink-3">{ROLES[user.role]}</p>
           </div>
+          <Link
+            href="/my/articles"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-ink hover:bg-stone"
+          >
+            <FileText aria-hidden className="size-4" />
+            내 정보글
+          </Link>
           {user.role === "admin" && (
             <Link
               href="/admin"

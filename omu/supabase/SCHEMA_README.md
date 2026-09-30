@@ -121,6 +121,8 @@ schema.sql을 이미 실행한 프로젝트에는 아래 파일을 순서대로 
 | `migrations/20260929_write_fields.sql` | `posts.tags` (최대 5), `recruits.positions` (최대 5)<br>`recruits.deadline`, `market_items.item_condition`<br>`posts.tags` 읽기 권한(GRANT) |
 | `migrations/20260930_guest_community.sql` | 비회원 글·댓글·신고 RPC(`omu_guest_create_post`, `omu_create_comment`, `omu_report`)<br>수정·삭제 RPC(`omu_edit_post`, `omu_edit_comment`, `omu_soft_delete`), `omu_my_items`<br>`guest_name`·`guest_key`·`edited_at`·`deleted_at` 컬럼, `reports.reporter_key`·대상 스냅샷<br>도배 제한 `omu_guest_events`(외부 접근 불가), `omu_guard_row` 보호 컬럼 추가, 조회 정책 4개 `ALTER POLICY` |
 
+| `migrations/20261001_member_articles.sql` | 정보글을 로그인 회원 누구나 작성: articles insert/update/delete 정책 `ALTER POLICY`(본인 또는 관리자)<br>트리거 `omu_20_article_rules`: 작성자·조회수·발행 시각 고정, 배지(author_display)를 작성자 역할로 강제, 발행 → 초안 되돌리기 금지(관리자 포함), 일반 회원 1시간 10건<br>`omu_guard_row` 갱신(정보글의 발행 관련 컬럼은 위 트리거에 맡김) |
+
 ### 20260930 실행 전 확인할 것
 - **비회원 쓰기의 경계:** anon 역할에 테이블 쓰기 권한은 여전히 없다. 비회원은 위 RPC 로만 쓴다. RPC 는 제목·본문 길이, 게시판, 비밀값 형식, 도배 제한을 DB 에서 다시 검사한다.
 - **도배 제한 한도:**
