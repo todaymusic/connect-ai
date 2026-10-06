@@ -13,7 +13,7 @@ import { listRecruits } from "@/lib/data/recruits";
 import { getScore, listRelatedScores, listScores } from "@/lib/data/scores";
 import { scoreFileUrl } from "@/lib/data/storage";
 import { formatCount, formatDate } from "@/lib/format";
-import { DIFFICULTIES, QNA_SUBJECTS, SCORE_INSTRUMENTS, isKey, siteUrl } from "@/lib/site";
+import { DEFAULT_OG_IMAGE, DIFFICULTIES, QNA_SUBJECTS, SCORE_INSTRUMENTS, isKey, siteUrl } from "@/lib/site";
 
 export const revalidate = 300;
 
@@ -27,11 +27,13 @@ export async function generateMetadata({ params }: PageProps<"/score/[instrument
   const score = await getScore(instrument, slug);
   if (!score) return { title: "악보를 찾을 수 없어요", robots: { index: false } };
   const title = `${score.title} ${SCORE_INSTRUMENTS[score.instrument]} 악보`;
+  const image = score.thumbnailUrl || DEFAULT_OG_IMAGE;
   return {
     title,
     description: score.description,
     alternates: { canonical: `/score/${score.instrument}/${score.slug}` },
-    openGraph: { title, description: score.description, type: "article", ...(score.thumbnailUrl ? { images: [score.thumbnailUrl] } : {}) },
+    openGraph: { title, description: score.description, type: "article", images: [image] },
+    twitter: { card: "summary_large_image", title, description: score.description, images: [image] },
   };
 }
 
