@@ -10,7 +10,7 @@ import { getArticle, listRelatedArticles } from "@/lib/data/articles";
 import { listComments } from "@/lib/data/posts";
 import type { Article } from "@/lib/data/types";
 import { formatCount, formatDate } from "@/lib/format";
-import { ARTICLE_CATEGORIES, EDITOR_DISPLAY_NAME, articlePath, siteUrl } from "@/lib/site";
+import { ARTICLE_CATEGORIES, EDITOR_DISPLAY_NAME, SITE_NAME, articlePath, siteUrl } from "@/lib/site";
 
 export async function articleMetadata(category: string, slug: string): Promise<Metadata> {
   const a = await getArticle(category, slug);
@@ -46,7 +46,7 @@ export async function ArticleDetail({ article: a }: { article: Article }) {
           keywords: a.keywords.join(", "),
           articleSection: ARTICLE_CATEGORIES[a.category],
           author: a.authorDisplay === "editor" ? { "@type": "Organization", name: authorName } : { "@type": "Person", name: authorName },
-          publisher: { "@type": "Organization", name: "OMU" },
+          publisher: { "@type": "Organization", name: SITE_NAME },
         }}
       />
       <Breadcrumbs

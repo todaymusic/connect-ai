@@ -11,7 +11,7 @@ import { NewsStrip } from "@/components/home/NewsStrip";
 import { RecruitLegend, RecruitList } from "@/components/home/RecruitList";
 import { Section, SectionHeader } from "@/components/ui";
 import { POPULAR_KEYWORDS, getHomeData } from "@/lib/data/home";
-import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/site";
+import { SITE_ALT_NAMES, SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/site";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { closedReason } from "@/lib/write/config";
 import type { Metadata } from "next";
@@ -40,6 +40,7 @@ export default async function HomePage() {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: SITE_NAME,
+    alternateName: SITE_ALT_NAMES,
     url: siteUrl(),
     description: SITE_DESCRIPTION,
     inLanguage: "ko-KR",

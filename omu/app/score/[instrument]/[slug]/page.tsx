@@ -13,7 +13,7 @@ import { listRecruits } from "@/lib/data/recruits";
 import { getScore, listRelatedScores, listScores } from "@/lib/data/scores";
 import { scoreFileUrl } from "@/lib/data/storage";
 import { formatCount, formatDate } from "@/lib/format";
-import { DEFAULT_OG_IMAGE, DIFFICULTIES, QNA_SUBJECTS, SCORE_INSTRUMENTS, isKey, siteUrl } from "@/lib/site";
+import { DEFAULT_OG_IMAGE, DIFFICULTIES, QNA_SUBJECTS, SCORE_INSTRUMENTS, SITE_NAME, isKey, siteUrl } from "@/lib/site";
 
 export const revalidate = 300;
 
@@ -74,7 +74,7 @@ export default async function ScoreDetailPage({ params }: PageProps<"/score/[ins
           encodingFormat: "application/pdf",
           ...(score.thumbnailUrl ? { image: score.thumbnailUrl } : {}),
           datePublished: score.createdAt,
-          publisher: { "@type": "Organization", name: "OMU" },
+          publisher: { "@type": "Organization", name: SITE_NAME },
         }}
       />
       <Breadcrumbs

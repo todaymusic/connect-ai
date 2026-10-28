@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/header/Header";
-import { DEFAULT_OG_IMAGE, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, siteUrl } from "@/lib/site";
+import { DEFAULT_OG_IMAGE, SITE_BRAND, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, siteUrl } from "@/lib/site";
 import "./globals.css";
 
 // 로고·영문·숫자용 Space Grotesk 700 (한글은 globals.css 의 Pretendard 다이나믹 서브셋)
@@ -17,17 +17,17 @@ const spaceGrotesk = localFont({
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: {
-    default: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    default: `${SITE_BRAND} — ${SITE_TAGLINE}`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
-  keywords: ["무료 악보", "악보 공유", "중고 악기", "밴드 구인", "음악 커뮤니티", "실용음악 입시", "악기 입문"],
+  keywords: ["오뮤클럽", "OMU", "무료 악보", "악보 공유", "중고 악기", "밴드 구인", "음악 커뮤니티", "실용음악 입시", "악기 입문"],
   applicationName: SITE_NAME,
   openGraph: {
     type: "website",
     locale: "ko_KR",
     siteName: SITE_NAME,
-    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    title: `${SITE_BRAND} — ${SITE_TAGLINE}`,
     description: SITE_DESCRIPTION,
     url: "/",
     images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: `${SITE_NAME} 음악 커뮤니티` }],
