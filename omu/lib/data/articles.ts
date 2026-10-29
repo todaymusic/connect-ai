@@ -4,6 +4,7 @@ import type { ArticleCategory } from "../site";
 import { DEFAULT_PAGE_SIZE, PROFILE_COLS, likePattern, matches, paginate, range, toAuthor, toPaged } from "./core";
 import { DEMO_ARTICLES } from "./demo/articles";
 import { publicDb } from "./source";
+import { articleThumbnailUrl } from "./storage";
 import type { Article, Paged } from "./types";
 
 export type ArticleFilter = {
@@ -15,7 +16,7 @@ export type ArticleFilter = {
   pageSize?: number;
 };
 
-const ARTICLE_COLS = `id, slug, category, title, content, meta_description, keywords, youtube_url, view_count,
+const ARTICLE_COLS = `id, slug, category, title, content, meta_description, keywords, youtube_url, thumbnail_url, view_count,
   author_display, published_at, created_at, author:profiles!articles_author_id_fkey(${PROFILE_COLS})`;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,6 +31,7 @@ function mapArticle(r: any): Article {
     content,
     keywords: (r.keywords ?? "").split(",").map((k: string) => k.trim()).filter(Boolean),
     youtubeUrl: r.youtube_url ?? null,
+    thumbnailUrl: articleThumbnailUrl(r.thumbnail_url),
     views: r.view_count ?? 0,
     readMinutes: Math.max(1, Math.round(content.length / 500)),
     authorDisplay: r.author_display === "member" ? "member" : "editor",

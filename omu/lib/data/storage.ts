@@ -50,6 +50,11 @@ export function scoreThumbnailUrl(path: string | null | undefined): string | nul
   return publicObjectUrl("thumbnails", path);
 }
 
+/** 정보글 대표 사진 주소 (thumbnails 버킷, 경로는 articles/<이름>.jpg) */
+export function articleThumbnailUrl(path: string | null | undefined): string | null {
+  return publicObjectUrl("thumbnails", path);
+}
+
 /** 장터 사진 공개 주소 (market 버킷, 경로는 <uid>/파일이름) */
 export function marketImageUrl(path: string): string | null {
   return publicObjectUrl("market", path);

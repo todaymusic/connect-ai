@@ -84,6 +84,7 @@ export default async function WriteTypePage({ params, searchParams }: PageProps<
             defaults={{ category: first(sp.category) }}
             badge={editLoad?.kind === "ok" ? editLoad.edit.authorDisplay : role === "editor" || role === "admin" ? "editor" : "member"}
             edit={editLoad?.kind === "ok" ? editLoad.edit : undefined}
+            canUploadCover={role === "editor" || role === "admin"}
           />
         )}
       </div>

@@ -362,10 +362,23 @@ export async function submitArticle(_prev: WriteResult, fd: FormData): Promise<W
     {
       type: "article",
       validate: validateArticle,
-      insert: (d, w) => ({
+      insert: ({ thumbnail_path, ...d }, w) => ({
         table: "articles",
         select: "id, slug",
-        row: { ...d, author_id: w.id, author_display: w.role === "user" ? "member" : "editor" },
+        row: {
+          category: d.category,
+          title: d.title,
+          slug: d.slug,
+          meta_description: d.meta_description,
+          content: d.content,
+          keywords: d.keywords,
+          youtube_url: d.youtube_url,
+          is_published: d.is_published,
+          // 대표 사진 업로드는 에디터·관리자만 가능(thumbnails 버킷 권한)
+          ...(w.role !== "user" && thumbnail_path ? { thumbnail_url: thumbnail_path } : {}),
+          author_id: w.id,
+          author_display: w.role === "user" ? "member" : "editor",
+        },
       }),
       uniqueSlug: { table: "articles", demoTaken: () => DEMO_ARTICLES.map((a) => a.slug) },
       path: (d) => (d.is_published ? articlePath(d.category, d.slug) : "/my/articles?saved=draft"),
@@ -411,9 +424,21 @@ export async function submitArticleEdit(_prev: WriteResult, fd: FormData): Promi
 
   const d = v.data;
   const isPublished = before.is_published || d.is_published; // 공개 글은 공개 유지
+  // 대표 사진: 에디터·관리자만 바꾼다. 새 사진이 있으면 교체, '사진 빼기'면 비움, 아무것도 안 했으면 그대로
+  const staffWriter = writer.role === "editor" || writer.role === "admin";
+  const thumbChange = !staffWriter ? {} : d.thumbnail_path ? { thumbnail_url: d.thumbnail_path } : d.thumbnail_remove ? { thumbnail_url: null } : {};
   const { data: after, error } = await supabase
     .from("articles")
-    .update({ category: d.category, title: d.title, meta_description: d.meta_description, content: d.content, keywords: d.keywords, youtube_url: d.youtube_url, is_published: isPublished })
+    .update({
+      category: d.category,
+      title: d.title,
+      meta_description: d.meta_description,
+      content: d.content,
+      keywords: d.keywords,
+      youtube_url: d.youtube_url,
+      is_published: isPublished,
+      ...thumbChange,
+    })
     .eq("id", id)
     .select("category, slug, is_published")
     .maybeSingle();

@@ -65,6 +65,8 @@ export type Article = {
   content: string;
   keywords: string[];
   youtubeUrl: string | null;
+  /** 대표 사진 공개 주소 (thumbnails 버킷 articles/…). 없으면 카드에 기본 표시 */
+  thumbnailUrl?: string | null;
   views: number;
   readMinutes: number;
   authorDisplay: "editor" | "member";

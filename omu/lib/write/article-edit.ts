@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { ArticleEdit } from "@/components/write/forms/ArticleForm";
+import { articleThumbnailUrl } from "../data/storage";
 import { getSupabaseServerClient } from "../supabase/server";
 import type { Writer } from "./writer";
 
@@ -17,7 +18,7 @@ export async function loadArticleForEdit(id: string, writer: Writer | null, mode
   if (!supabase || !writer) return { kind: "forbidden", message: "로그인한 작성자만 수정할 수 있어요." };
   const { data } = await supabase
     .from("articles")
-    .select("id, author_id, author_display, category, title, meta_description, content, keywords, youtube_url, is_published")
+    .select("id, author_id, author_display, category, title, meta_description, content, keywords, youtube_url, thumbnail_url, is_published")
     .eq("id", id)
     .maybeSingle();
   if (!data) return { kind: "missing", message: "수정할 글을 찾을 수 없어요. 지워졌거나 다른 사람의 임시저장 글이에요." };
@@ -28,6 +29,7 @@ export async function loadArticleForEdit(id: string, writer: Writer | null, mode
       id: data.id,
       isPublished: Boolean(data.is_published),
       authorDisplay: data.author_display === "editor" ? "editor" : "member",
+      coverUrl: articleThumbnailUrl(data.thumbnail_url),
       values: {
         category: data.category ?? "",
         title: data.title ?? "",

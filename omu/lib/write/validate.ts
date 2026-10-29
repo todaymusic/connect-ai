@@ -387,7 +387,12 @@ export type ArticleInput = {
   keywords: string;
   youtube_url: string | null;
   is_published: boolean;
+  /** 새로 올린 대표 사진 (thumbnails 버킷 articles/…). 없으면 null — 저장은 에디터·관리자만 */
+  thumbnail_path: string | null;
+  /** 수정 화면에서 '사진 빼기'를 눌렀는지 */
+  thumbnail_remove: boolean;
 };
+const ARTICLE_THUMB_PATH = /^articles\/[a-z0-9-]+\.(jpe?g|png|webp)$/;
 export function validateArticle(raw: Raw): Validated<ArticleInput> {
   const e: FieldErrors = {};
   const category = str(raw, "category");
@@ -402,7 +407,12 @@ export function validateArticle(raw: Raw): Validated<ArticleInput> {
   const keywords = listOf(raw, "keywords");
   if (keywords.length > 10) e.keywords = "키워드는 10개까지 적을 수 있어요.";
   const youtube_url = youtube(e, raw);
+  // 대표 사진은 선택 — 형식이 이상하면 저장은 막지 않고 버린다
+  const thumb = opt(raw, "thumbnail_path");
+  const thumbnail_path = thumb && ARTICLE_THUMB_PATH.test(thumb) && thumb.length <= 200 ? thumb : null;
   return done(e, {
+    thumbnail_path,
+    thumbnail_remove: str(raw, "thumbnail_remove") === "1",
     category: category as ArticleCategory,
     title,
     slug,

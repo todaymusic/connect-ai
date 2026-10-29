@@ -20,8 +20,11 @@ export function ArticleCard({ article: a, headingLevel = "h3" }: { article: Arti
   const H = headingLevel;
   return (
     <Link href={articlePath(a.category, a.slug)} className="card group flex h-full flex-col overflow-hidden">
-      <div className={`relative flex aspect-[5/2] items-center justify-center bg-linear-to-br md:aspect-[16/9] ${COVER_TONE[a.category]}`}>
-        {a.youtubeUrl ? (
+      <div className={`relative flex aspect-[5/2] items-center justify-center overflow-hidden bg-linear-to-br md:aspect-[16/9] ${COVER_TONE[a.category]}`}>
+        {a.thumbnailUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- Supabase 공개 버킷 이미지(최적화 서버 거치지 않음)
+          <img src={a.thumbnailUrl} alt="" loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
+        ) : a.youtubeUrl ? (
           <span className="flex size-12 items-center justify-center rounded-full bg-card text-coral shadow-[var(--shadow-card)]">
             <Play aria-hidden className="size-5 translate-x-0.5 fill-current" />
           </span>

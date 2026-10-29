@@ -20,7 +20,14 @@ export async function articleMetadata(category: string, slug: string): Promise<M
     description: a.summary,
     keywords: a.keywords,
     alternates: { canonical: articlePath(a.category, a.slug) },
-    openGraph: { title: a.title, description: a.summary, type: "article", publishedTime: a.publishedAt },
+    openGraph: {
+      title: a.title,
+      description: a.summary,
+      type: "article",
+      publishedTime: a.publishedAt,
+      ...(a.thumbnailUrl ? { images: [{ url: a.thumbnailUrl, alt: a.title }] } : {}),
+    },
+    ...(a.thumbnailUrl ? { twitter: { card: "summary_large_image", images: [a.thumbnailUrl] } } : {}),
   };
 }
 
@@ -45,6 +52,7 @@ export async function ArticleDetail({ article: a }: { article: Article }) {
           inLanguage: "ko-KR",
           keywords: a.keywords.join(", "),
           articleSection: ARTICLE_CATEGORIES[a.category],
+          ...(a.thumbnailUrl ? { image: a.thumbnailUrl } : {}),
           author: a.authorDisplay === "editor" ? { "@type": "Organization", name: authorName } : { "@type": "Person", name: authorName },
           publisher: { "@type": "Organization", name: SITE_NAME },
         }}
@@ -82,6 +90,15 @@ export async function ArticleDetail({ article: a }: { article: Article }) {
           <ArticleOwnerActions id={a.id} title={a.title} authorId={a.author?.id ?? null} />
         </header>
 
+        {a.thumbnailUrl && (
+          // eslint-disable-next-line @next/next/no-img-element -- Supabase 공개 버킷 이미지
+          <img
+            src={a.thumbnailUrl}
+            alt={`${a.title} 대표 이미지`}
+            className="mt-6 aspect-[16/9] w-full rounded-2xl border border-line object-cover"
+            fetchPriority="high"
+          />
+        )}
         <div className="mt-6">
           <YouTubeEmbed url={a.youtubeUrl} title={a.title} />
           <SimpleMarkdown text={a.content} />
