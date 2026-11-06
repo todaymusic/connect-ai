@@ -32,7 +32,7 @@ function mapArticle(r: any): Article {
     content,
     keywords: (r.keywords ?? "").split(",").map((k: string) => k.trim()).filter(Boolean),
     youtubeUrl: r.youtube_url ?? null,
-    thumbnailUrl: articleThumbnailUrl(r.thumbnail_url) ?? bundledArticleCover(r.category, r.slug),
+    thumbnailUrl: articleThumbnailUrl(r.thumbnail_url) ?? bundledArticleCover(r.category, r.slug, r.title),
     views: r.view_count ?? 0,
     readMinutes: Math.max(1, Math.round(content.length / 500)),
     authorDisplay: r.author_display === "member" ? "member" : "editor",
