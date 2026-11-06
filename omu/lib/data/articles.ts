@@ -4,6 +4,7 @@ import type { ArticleCategory } from "../site";
 import { DEFAULT_PAGE_SIZE, PROFILE_COLS, likePattern, matches, paginate, range, toAuthor, toPaged } from "./core";
 import { DEMO_ARTICLES } from "./demo/articles";
 import { publicDb } from "./source";
+import { bundledArticleCover } from "./article-covers";
 import { articleThumbnailUrl } from "./storage";
 import type { Article, Paged } from "./types";
 
@@ -31,7 +32,7 @@ function mapArticle(r: any): Article {
     content,
     keywords: (r.keywords ?? "").split(",").map((k: string) => k.trim()).filter(Boolean),
     youtubeUrl: r.youtube_url ?? null,
-    thumbnailUrl: articleThumbnailUrl(r.thumbnail_url),
+    thumbnailUrl: articleThumbnailUrl(r.thumbnail_url) ?? bundledArticleCover(r.category, r.slug),
     views: r.view_count ?? 0,
     readMinutes: Math.max(1, Math.round(content.length / 500)),
     authorDisplay: r.author_display === "member" ? "member" : "editor",
