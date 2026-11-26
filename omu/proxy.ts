@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { siteUrl } from "@/lib/site";
 import { getSupabasePublicEnv } from "@/lib/supabase/config";
 
 /**
@@ -15,8 +16,9 @@ export async function proxy(request: NextRequest) {
   // 그대로 두면 로그인이 끝나지 않으므로 콜백으로 넘겨 세션을 만든다(OAuth·이메일 링크 공통).
   const q = request.nextUrl.searchParams;
   if (request.nextUrl.pathname === "/" && (q.has("code") || (q.has("error") && q.has("error_description")))) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth/callback";
+    // 프록시 뒤에서는 nextUrl 의 호스트가 내부 주소라서 공개 주소 기준으로 새로 만든다
+    const url = new URL("/auth/callback", siteUrl());
+    url.search = request.nextUrl.search;
     return NextResponse.redirect(url);
   }
 

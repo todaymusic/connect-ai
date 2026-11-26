@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { siteUrl } from "@/lib/site";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 /**
@@ -11,5 +12,5 @@ export async function POST(request: NextRequest) {
     await supabase.auth.signOut();
   }
   // 303: POST 이후 GET 으로 홈 이동
-  return NextResponse.redirect(new URL("/", request.nextUrl.origin), { status: 303 });
+  return NextResponse.redirect(new URL("/", siteUrl()), { status: 303 });
 }

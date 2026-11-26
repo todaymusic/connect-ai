@@ -1,6 +1,7 @@
 import { isAuthPKCECodeVerifierMissingError, type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { safeNextPath } from "@/lib/auth-providers";
+import { siteUrl } from "@/lib/site";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 /** 이메일 템플릿을 token_hash 방식으로 바꿨을 때 받을 수 있는 type 값 */
@@ -15,7 +16,9 @@ const EMAIL_OTP_TYPES: EmailOtpType[] = ["email", "magiclink", "signup", "invite
  *    verifyOtp 로 바로 세션을 만든다. 다른 기기·브라우저에서 열어도 된다. (docs/AUTH.md)
  */
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = request.nextUrl;
+  const { searchParams } = request.nextUrl;
+  // Railway 등 프록시 뒤에서는 request.nextUrl.origin 이 내부 주소(localhost:8080)로 나온다 → 공개 주소를 쓴다
+  const origin = siteUrl();
   const next = safeNextPath(searchParams.get("next"));
 
   const toLogin = (code: string) => {
