@@ -1,7 +1,7 @@
 // 소셜 로그인 Provider 설정 (서버·클라이언트 공용)
 import type { Provider } from "@supabase/supabase-js";
 
-export type SocialProviderKey = "kakao" | "naver";
+export type SocialProviderKey = "kakao" | "google" | "naver";
 
 export type SocialProviderConfig = {
   key: SocialProviderKey;
@@ -22,6 +22,7 @@ export type SocialProviderConfig = {
  */
 export function getSocialProviders(): SocialProviderConfig[] {
   const kakaoEnabled = process.env.NEXT_PUBLIC_AUTH_KAKAO_ENABLED !== "false";
+  const googleEnabled = process.env.NEXT_PUBLIC_AUTH_GOOGLE_ENABLED === "true";
   const naverId = process.env.NEXT_PUBLIC_NAVER_PROVIDER_ID?.trim() ?? "";
   const naverProvider: Provider | null = isCustomProviderId(naverId) ? naverId : null;
 
@@ -33,15 +34,22 @@ export function getSocialProviders(): SocialProviderConfig[] {
       pendingLabel: "카카오 로그인 준비 중",
     },
     {
+      key: "google",
+      label: "Google로 계속하기",
+      // Supabase 에 구글 키를 넣은 뒤 NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true 로 켠다
+      provider: googleEnabled ? "google" : null,
+      pendingLabel: "Google 로그인 준비 중",
+    },
+    {
       key: "naver",
       label: "네이버로 계속하기",
       provider: naverProvider,
       pendingLabel: "네이버 로그인 준비 중",
     },
   ];
-  // 네이버는 실제로 연결된 경우에만 로그인 화면에 보인다(연결 전에는 '준비 중' 버튼도 숨김).
+  // 구글·네이버는 실제로 연결된 경우에만 로그인 화면에 보인다(연결 전에는 '준비 중' 버튼도 숨김).
   // 관리자 화면의 연결 상태 표시는 이 필터 전 값이 아니라 provider 유무로 판단하므로 영향 없음.
-  return providers.filter((p) => p.key !== "naver" || p.provider !== null);
+  return providers.filter((p) => p.key === "kakao" || p.provider !== null);
 }
 
 /**
