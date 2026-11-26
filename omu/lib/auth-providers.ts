@@ -25,7 +25,7 @@ export function getSocialProviders(): SocialProviderConfig[] {
   const naverId = process.env.NEXT_PUBLIC_NAVER_PROVIDER_ID?.trim() ?? "";
   const naverProvider: Provider | null = isCustomProviderId(naverId) ? naverId : null;
 
-  return [
+  const providers: SocialProviderConfig[] = [
     {
       key: "kakao",
       label: "카카오로 계속하기",
@@ -39,6 +39,9 @@ export function getSocialProviders(): SocialProviderConfig[] {
       pendingLabel: "네이버 로그인 준비 중",
     },
   ];
+  // 네이버는 실제로 연결된 경우에만 로그인 화면에 보인다(연결 전에는 '준비 중' 버튼도 숨김).
+  // 관리자 화면의 연결 상태 표시는 이 필터 전 값이 아니라 provider 유무로 판단하므로 영향 없음.
+  return providers.filter((p) => p.key !== "naver" || p.provider !== null);
 }
 
 /**
